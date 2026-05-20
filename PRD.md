@@ -8,7 +8,7 @@ The product must support both automatic publishing and manual publisher-reviewed
 
 ## 2. Goals
 
-- Let authenticated users submit mock tweets as nominations.
+- Let authenticated users submit proposed posts as nominations.
 - Show nominations in a clean feed with status, vote totals, author, media, and target tweet context.
 - Let eligible users vote using `A`, `B`, or `U`.
 - Treat `A` and `B` as positive votes and `U` as a negative vote for initial approval logic.
@@ -74,7 +74,7 @@ The product must support both automatic publishing and manual publisher-reviewed
 
 ### Original Tweet
 
-User writes a mock tweet to be posted by the host account.
+User writes a proposed post to be posted by the host account.
 
 Fields:
 
@@ -85,7 +85,7 @@ Fields:
 
 ### Quote Tweet
 
-User writes a mock tweet and attaches a link to an existing X post that should be quoted.
+User writes a proposed quote post and attaches a link to an existing X post that should be quoted.
 
 Fields:
 
@@ -234,7 +234,7 @@ The feed should support:
 Each feed item should show:
 
 - Nomination type.
-- Mock tweet text or target repost.
+- Proposed post text or target repost.
 - Uploaded image preview.
 - Target X post URL preview, when available.
 - Author.
@@ -445,7 +445,8 @@ Important X API constraints:
 
 Implementation rule:
 
-- Build the publishing layer behind an `XClient` interface with two implementations: `MockXClient` for local/test development and `LiveXClient` for configured deployments. The rest of the app should not call X endpoints directly.
+- Build the publishing layer behind an `XClient` interface with only the live X API implementation. The rest of the app should not call X endpoints directly.
+- Do not use mocks, mock clients, mocked data flows, stubbed behavior, test implementations, or test suites anywhere in the product for any reason.
 
 ## 17. Technical Architecture
 
@@ -755,7 +756,7 @@ Hardening and production readiness:
 - Which framework should be used for the Cloudflare app?
   Decision: React Router v7 running on Cloudflare Workers, with TypeScript.
 
-- What is the expected community size for the first test?
+- What is the expected community size for the first launch?
   Decision: roughly `20-100` authenticated users and low posting volume. Design the schema and repository interfaces so it can grow.
 
 - What X API tier and permissions are available?

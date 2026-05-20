@@ -15,7 +15,7 @@ Use this stack unless there is a strong reason to change it before implementatio
 - Production database: Cloudflare D1.
 - Object storage: Wrangler local R2/local object adapter in development, Cloudflare R2 in staging/production.
 - Auth: X OAuth 2.0 with PKCE, app-managed sessions stored in the database.
-- X integration: local mock client plus live X API v2 client.
+- X integration: live X API v2 client only.
 
 Why this stack:
 
@@ -37,7 +37,7 @@ React Router routes/components
       -> storage interfaces
         -> local/R2 adapters
       -> X client interface
-        -> mock/live adapters
+        -> live adapter
 ```
 
 Rules:
@@ -47,6 +47,7 @@ Rules:
 - Services own business logic such as voting criteria, publishing workflow, role checks, and status transitions.
 - Repositories own persistence details.
 - All host-specific values must come from settings, environment variables, or database state.
+- Do not create or use mocks, mock clients, mocked data flows, stubbed behavior, test implementations, or test suites anywhere for any reason.
 
 ## 3. Project Structure
 
@@ -87,7 +88,6 @@ app/
     r2-storage.ts
   x/
     interfaces.ts
-    mock-x-client.ts
     live-x-client.ts
 workers/
   app.ts
@@ -122,7 +122,7 @@ Notes:
 - Do not commit secrets.
 - The host account is configuration, not code.
 - The connected host/publishing account should be manageable through settings once the basic app works.
-- Local development should support `MockXClient` so the app can be built without live X credentials.
+- Local development should use live X credentials and the live X client.
 
 ## 5. Database Schema
 
@@ -447,7 +447,6 @@ interface XClient {
 
 Implementations:
 
-- `MockXClient`: deterministic local fake for development and tests.
 - `LiveXClient`: X API v2 implementation.
 
 Required live capabilities:
@@ -565,30 +564,9 @@ Interaction:
 - Use icons sparingly for utility actions. Prefer text or typographic controls where meaning matters.
 - Motion should be subtle: feed item reveal, vote count changes, and publishing state transitions.
 
-## 15. Testing Strategy
+## 15. No Mocks Or Tests
 
-Unit tests:
-
-- Approval criteria.
-- Permission checks.
-- Nomination status transitions.
-- X URL parsing.
-- Settings validation.
-
-Integration tests:
-
-- Repository behavior against local SQLite/D1-compatible database.
-- Vote upsert and vote summary.
-- Manual publish flow using `MockXClient`.
-- Automatic publish flow using `MockXClient`.
-
-End-to-end checks:
-
-- Login mock/session flow.
-- Create nomination.
-- Vote with optional comment.
-- Qualification and review queue.
-- Send/deny/veto.
+Do not add mocks or tests anywhere for any reason. This includes unit tests, integration tests, end-to-end tests, test fixtures, test runners, mock clients, mocked service layers, stubbed auth/session flows, fake X clients, fake repositories, and package scripts dedicated to testing.
 
 ## 16. Build Phases
 
@@ -600,14 +578,14 @@ Acceptance criteria:
 - Cloudflare Worker deployment config exists.
 - Drizzle schema and migrations exist.
 - Repository interfaces exist.
-- Mock auth/session can identify a seeded host/admin.
+- Live auth/session flow can identify a seeded host/admin.
 - Basic layout, feed shell, and navigation exist.
 
 ### Phase 2: Auth, Roles, And Settings
 
 Acceptance criteria:
 
-- X OAuth login flow works or is cleanly stubbed behind the auth interface.
+- X OAuth login flow works through the live auth interface.
 - Sessions persist in the database.
 - Roles and permissions are enforced server-side.
 - Settings can be viewed/edited by host/admin.
@@ -637,7 +615,6 @@ Acceptance criteria:
 
 Acceptance criteria:
 
-- `MockXClient` can publish all nomination types locally.
 - `LiveXClient` supports the required X endpoints.
 - Manual publisher review can send/deny/veto/archive.
 - Automatic workflow sends when criteria are met.
@@ -675,7 +652,6 @@ Suggested package scripts:
   "deploy": "wrangler deploy",
   "typecheck": "tsc --noEmit",
   "lint": "eslint .",
-  "test": "vitest",
   "db:generate": "drizzle-kit generate",
   "db:migrate:local": "wrangler d1 migrations apply plurmurate --local",
   "db:migrate:remote": "wrangler d1 migrations apply plurmurate --remote"
