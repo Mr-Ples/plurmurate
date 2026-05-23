@@ -65,6 +65,7 @@ function mapExternalTweet(row: any) {
     authorId: row.authorId,
     textPreview: row.textPreview,
     mediaUrls: row.mediaUrlsJson ? JSON.parse(row.mediaUrlsJson) : [],
+    embedHtml: row.embedHtml,
     fetchedAt: row.fetchedAt,
     fetchStatus: row.fetchStatus,
   };
@@ -328,6 +329,7 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
           authorId: input.authorId ?? null,
           textPreview: input.textPreview ?? null,
           mediaUrlsJson: JSON.stringify(input.mediaUrls ?? []),
+          embedHtml: input.embedHtml ?? null,
           fetchedAt: new Date().toISOString(),
           fetchStatus: input.fetchStatus,
           rawJson: input.rawJson ? JSON.stringify(input.rawJson) : null,

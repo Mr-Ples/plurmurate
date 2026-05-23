@@ -7,6 +7,7 @@ export interface ExternalTweetPreview {
   authorId: string | null;
   textPreview: string | null;
   mediaUrls: string[];
+  embedHtml: string | null;
   fetchedAt: string | null;
   fetchStatus: "ok" | "failed";
 }

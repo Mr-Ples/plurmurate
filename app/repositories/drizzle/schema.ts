@@ -108,6 +108,7 @@ export const externalTweets = sqliteTable("external_tweets", {
   authorId: text("author_id"),
   textPreview: text("text_preview"),
   mediaUrlsJson: text("media_urls_json"),
+  embedHtml: text("embed_html"),
   fetchedAt: text("fetched_at"),
   fetchStatus: text("fetch_status").notNull(),
   rawJson: text("raw_json"),

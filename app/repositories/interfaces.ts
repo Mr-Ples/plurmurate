@@ -91,6 +91,7 @@ export interface ExternalTweetRepository {
     authorId?: string | null;
     textPreview?: string | null;
     mediaUrls?: string[];
+    embedHtml?: string | null;
     fetchStatus: "ok" | "failed";
     rawJson?: unknown;
   }): Promise<ExternalTweetPreview>;

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { ExternalLink } from "lucide-react";
 import type { ExternalTweetPreview } from "~/domain/external-tweets";
 
@@ -10,11 +11,47 @@ export function TargetTweetCard({
   fallbackUrl: string | null;
   fallbackId: string | null;
 }) {
-  if (!tweet && !fallbackUrl) return null;
   const url = tweet?.url ?? fallbackUrl ?? "#";
   const username = tweet?.authorUsername;
   const displayName = tweet?.authorName ?? (username ? `@${username}` : "X post");
   const avatarLabel = username?.[0]?.toUpperCase() ?? "X";
+  const embedRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!tweet?.embedHtml || !embedRef.current) return;
+    const loadWidgets = () => {
+      const twttr = (window as any).twttr;
+      if (twttr?.widgets?.load) twttr.widgets.load(embedRef.current);
+    };
+    if ((window as any).twttr?.widgets?.load) {
+      loadWidgets();
+      return;
+    }
+    const existingScript = document.querySelector<HTMLScriptElement>("script[src='https://platform.twitter.com/widgets.js']");
+    if (existingScript) {
+      existingScript.addEventListener("load", loadWidgets, { once: true });
+      return () => existingScript.removeEventListener("load", loadWidgets);
+    }
+    const script = document.createElement("script");
+    script.src = "https://platform.twitter.com/widgets.js";
+    script.async = true;
+    script.charset = "utf-8";
+    script.onload = loadWidgets;
+    document.body.appendChild(script);
+  }, [tweet?.embedHtml]);
+
+  if (!tweet && !fallbackUrl) return null;
+
+  if (tweet?.embedHtml) {
+    return (
+      <div
+        ref={embedRef}
+        className="relative mt-3.5 overflow-hidden rounded-lg border border-[#1f242129] bg-white/55 px-3.5 py-2 text-[#1f2421]"
+        onClick={(event) => event.stopPropagation()}
+        dangerouslySetInnerHTML={{ __html: tweet.embedHtml }}
+      />
+    );
+  }
 
   return (
     <a
