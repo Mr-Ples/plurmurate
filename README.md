@@ -81,7 +81,7 @@ npm run dev
 
 Copy the URL from the tunnel to the staging X app configuration **Website URL** and **Callback URI / Redirect URL** setting (you need to do this every time you start the local tunnel):
 - Website URL: https://tunnel-url.cloudflare.com
-- Callback URI / Redirect URL: https://tunnel-url.cloudflare.com/x/callback
+- Callback URI / Redirect URL: https://tunnel-url.cloudflare.com/auth/x/callback
 
 ### Production
 
@@ -103,6 +103,31 @@ Upload production secrets:
 npx wrangler secret bulk .dev.vars.production --env production
 ```
 
+Copy the URL to the production X app configuration **Website URL** and **Callback URI / Redirect URL** setting:
+- Website URL: https://example.project.workers.dev/
+- Callback URI / Redirect URL: https://example.project.workers.dev/auth/x/callback
+
+
+## Deploy
+
+### Staging (Optional)
+
+You have a local setup but if you want to be safe you can deploy staging to a seperate worker
+
+Upload staging secrets:
+
+```bash
+npx wrangler secret bulk .dev.vars.staging --env staging
+```
+
+```bash
+npm run db:migrate:staging:remote
+npm run build:staging
+npm run deploy:staging
+```
+
+### Production
+
 Apply production migrations and deploy:
 
 ```bash
@@ -111,10 +136,3 @@ npm run build:production
 npm run deploy:production
 ```
 
-## Staging Deploy
-
-```bash
-npm run db:migrate:staging:remote
-npm run build:staging
-npm run deploy:staging
-```
