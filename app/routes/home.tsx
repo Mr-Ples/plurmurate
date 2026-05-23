@@ -22,10 +22,10 @@ export async function loader({ request, context }: any) {
     settings,
     host: settings.hostHandle
       ? {
-          handle: settings.hostHandle.replace(/^@/, ""),
-          profileImageUrl: host?.profileImageUrl ?? null,
-          displayName: host?.displayName ?? null,
-        }
+        handle: settings.hostHandle.replace(/^@/, ""),
+        profileImageUrl: host?.profileImageUrl ?? null,
+        displayName: host?.displayName ?? null,
+      }
       : null,
     nominations: await repos.nominations.listFeed({
       viewerUserId: user?.id,
@@ -146,10 +146,8 @@ export default function Home() {
         </section>
         <section className="grid gap-3.5">
           <NewNominationForm user={user} settings={settings} />
-          <div className="flex items-center gap-3 py-1" aria-hidden="true">
-            <span className="h-px flex-1 bg-[#1f242129]" />
-            <span className="text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Feed</span>
-            <span className="h-px flex-1 bg-[#1f242129]" />
+          <div className="flex items-center gap-3 py-1  px-6 opacity-50 " aria-hidden="true">
+            <span className="h-px flex-1 bg-[#1f242129] my-4" />
           </div>
           {filteredNominations.length ? filteredNominations.map((nomination) => <NominationCard key={nomination.id} nomination={nomination} user={user} />) : <p className="text-[#6e716b]">{nominations.length ? "No nominations match those filters." : "No nominations yet."}</p>}
         </section>

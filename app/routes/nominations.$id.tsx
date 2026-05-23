@@ -1,5 +1,5 @@
 import { ArrowLeft } from "lucide-react";
-import { Form, Link, redirect, useLoaderData, useLocation } from "react-router";
+import { Form, Link, redirect, useLoaderData, useLocation, useNavigate } from "react-router";
 import { AppShell } from "~/components/AppShell";
 import { nominationTypeLabel } from "~/domain/nominations";
 import { getCurrentUser } from "~/lib/auth/session";
@@ -39,15 +39,24 @@ export async function action({ request, context, params }: any) {
 export default function NominationDetail() {
   const { user, nomination, comments } = useLoaderData<typeof loader>();
   const location = useLocation();
+  const navigate = useNavigate();
   const from = (location.state as { from?: string } | null)?.from;
   const backTo = from?.startsWith("/") ? from : "/";
+  const backClass = "inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-md border border-[#1f242129] bg-white/35 px-3 py-2 text-[#1f2421] hover:border-[#1f24214d] hover:bg-[#fffcf4d1]";
   return (
     <AppShell user={user}>
       <main className="grid gap-5 py-[42px] pb-20">
-        <Link className="inline-flex w-fit items-center gap-1.5 rounded-md border border-[#1f242129] bg-white/35 px-3 py-2 text-[#1f2421] hover:border-[#1f24214d] hover:bg-[#fffcf4d1]" to={backTo}>
-          <ArrowLeft size={17} aria-hidden="true" />
-          Back
-        </Link>
+        {from ? (
+          <button className={backClass} type="button" onClick={() => navigate(-1)}>
+            <ArrowLeft size={17} aria-hidden="true" />
+            Back
+          </button>
+        ) : (
+          <Link className={backClass} to={backTo}>
+            <ArrowLeft size={17} aria-hidden="true" />
+            Back
+          </Link>
+        )}
         <div className="grid gap-5 md:grid-cols-[1fr_minmax(240px,340px)]">
         <article className="relative overflow-hidden rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-[18px] shadow-[0_12px_30px_rgba(31,36,33,0.06)]">
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(82,111,141,0.12),transparent_50%),linear-gradient(45deg,transparent,rgba(140,91,74,0.08))]" />
