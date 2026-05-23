@@ -21,5 +21,5 @@ export async function action({ request, context }: any) {
   if (image instanceof File && image.size > 0) {
     await storeNominationImage(context, user, nomination.id, image, "nomination_image", new URL(request.url).origin);
   }
-  return redirect(`/nominations/${nomination.id}`);
+  return redirect("/");
 }

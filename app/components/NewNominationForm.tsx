@@ -1,7 +1,7 @@
 import { Image, Info } from "lucide-react";
 import { useRef, useState } from "react";
 import { Form, Link } from "react-router";
-import type { NominationType } from "~/domain/nominations";
+import { nominationTypeLabel, type NominationType } from "~/domain/nominations";
 import type { AppSettings } from "~/domain/settings";
 import type { CurrentUser } from "~/repositories/interfaces";
 
@@ -116,7 +116,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
             }}
           >
             {settings.enabledNominationTypes.map((type) => (
-              <option key={type} value={type}>{type === "original" ? "text post" : type === "quote" ? "quote tweet" : type}</option>
+              <option key={type} value={type}>{nominationTypeLabel(type)}</option>
             ))}
           </select>
         </label>

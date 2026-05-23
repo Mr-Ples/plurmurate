@@ -1,5 +1,5 @@
 import { Form, Link } from "react-router";
-import type { FeedNomination } from "~/domain/nominations";
+import { nominationTypeLabel, type FeedNomination } from "~/domain/nominations";
 import type { CurrentUser } from "~/repositories/interfaces";
 
 const buttonClass = "cursor-pointer rounded-md border border-[#1f2421] bg-[#1f2421] px-3.5 py-2.5 text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-45";
@@ -15,7 +15,7 @@ export function NominationCard({ nomination, user, review = false }: { nominatio
       <div className="relative flex items-center gap-2.5">
         <img className="h-[42px] w-[42px] rounded-md bg-[#ddd4c5] object-cover" src={nomination.tweetAvatarUrl ?? nomination.creatorProfileImageUrl ?? "/favicon.ico"} alt="" />
         <div>
-          <p className="m-0 text-xs uppercase tracking-[0.08em] text-[#6e716b]">{nomination.type} / {nomination.status}</p>
+          <p className="m-0 text-xs uppercase tracking-[0.08em] text-[#6e716b]">{nominationTypeLabel(nomination.type)} / {nomination.status}</p>
           <p className="mt-0.5 mb-0 text-[#6e716b]">@{nomination.creatorUsername ?? "unknown"} nominated</p>
         </div>
       </div>

@@ -14,6 +14,12 @@ export const nominationStatuses = [
 export type NominationType = (typeof nominationTypes)[number];
 export type NominationStatus = (typeof nominationStatuses)[number];
 
+export function nominationTypeLabel(type: NominationType) {
+  if (type === "original") return "text post";
+  if (type === "quote") return "quote tweet";
+  return type;
+}
+
 export interface Nomination {
   id: string;
   creatorUserId: string;
@@ -42,6 +48,7 @@ export interface FeedNomination extends Nomination {
   voteA: number;
   voteB: number;
   voteU: number;
+  voteCommentCount: number;
   userVote: "A" | "B" | "U" | null;
   recentVoteComment: string | null;
   nominationMediaUrl: string | null;

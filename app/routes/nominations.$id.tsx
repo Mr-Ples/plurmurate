@@ -1,5 +1,6 @@
 import { Form, redirect, useLoaderData } from "react-router";
 import { AppShell } from "~/components/AppShell";
+import { nominationTypeLabel } from "~/domain/nominations";
 import { getCurrentUser } from "~/lib/auth/session";
 import { getRepositories } from "~/repositories/drizzle/repositories";
 import { storeNominationImage } from "~/services/media-service";
@@ -41,7 +42,7 @@ export default function NominationDetail() {
       <main className="grid gap-5 py-[42px] pb-20 md:grid-cols-[1fr_minmax(240px,340px)]">
         <article className="relative overflow-hidden rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-[18px] shadow-[0_12px_30px_rgba(31,36,33,0.06)]">
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(82,111,141,0.12),transparent_50%),linear-gradient(45deg,transparent,rgba(140,91,74,0.08))]" />
-          <p className="relative m-0 text-xs uppercase tracking-[0.08em] text-[#6e716b]">{nomination.type} / {nomination.status}</p>
+          <p className="relative m-0 text-xs uppercase tracking-[0.08em] text-[#6e716b]">{nominationTypeLabel(nomination.type)} / {nomination.status}</p>
           <h1 className="relative font-serif text-[clamp(2rem,6vw,5rem)] leading-[0.98] font-medium">{nomination.text ?? nomination.targetTweetUrl}</h1>
           {nomination.targetTweetUrl ? <a className="relative inline-block border-b border-[#526f8d73] text-[#526f8d]" href={nomination.targetTweetUrl}>Target X post {nomination.targetTweetId}</a> : null}
           {nomination.nominationMediaUrl ? <img className="relative my-3.5 block max-h-[420px] w-full rounded-md object-cover" src={nomination.nominationMediaUrl} alt="" /> : null}

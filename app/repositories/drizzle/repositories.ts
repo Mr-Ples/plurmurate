@@ -242,6 +242,11 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
               .where(and(eq(votes.nominationId, row.nomination.id), sql`${votes.comment} IS NOT NULL AND ${votes.comment} != ''`))
               .orderBy(desc(votes.updatedAt))
               .get();
+            const commentCount = await db
+              .select({ count: sql<number>`count(*)` })
+              .from(votes)
+              .where(and(eq(votes.nominationId, row.nomination.id), sql`${votes.comment} IS NOT NULL AND ${votes.comment} != ''`))
+              .get();
             return {
               ...mapNomination(row.nomination),
               creatorUsername: row.creatorUsername,
@@ -250,6 +255,7 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
               voteA: summary.a,
               voteB: summary.b,
               voteU: summary.u,
+              voteCommentCount: Number(commentCount?.count ?? 0),
               userVote: (userVote?.value as VoteValue | undefined) ?? null,
               recentVoteComment: recentComment?.comment ?? null,
               nominationMediaUrl: row.nominationMediaUrl,
