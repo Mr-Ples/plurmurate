@@ -32,7 +32,6 @@ export default function Home() {
     <AppShell user={user}>
       <main className="feed-layout">
         <section className="feed-intro">
-          <h1>Community nominations for the next post.</h1>
           <Form className="filters">
             <select name="status" aria-label="Status">
               <option value="">All statuses</option>
