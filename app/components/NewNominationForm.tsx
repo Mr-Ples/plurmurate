@@ -1,5 +1,5 @@
-import { Image, Info } from "lucide-react";
-import { useRef, useState } from "react";
+import { Image, Info, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Form, Link } from "react-router";
 import { nominationTypeLabel, type NominationType } from "~/domain/nominations";
 import type { AppSettings } from "~/domain/settings";
@@ -9,14 +9,23 @@ const buttonClass = "cursor-pointer rounded-md border border-[#1f2421] bg-[#1f24
 const fieldClass = "rounded-md border border-[#1f242129] bg-white/45 px-3 py-2.5";
 const iconButtonClass = "inline-flex h-[38px] w-[38px] cursor-pointer items-center justify-center rounded-md border border-[#1f242129] text-[#526f8d]";
 const srOnlyClass = "absolute -m-px h-px w-px overflow-hidden whitespace-nowrap border-0 p-0 [clip:rect(0,0,0,0)]";
+const maxPreviewImages = 4;
+
+type SelectedImage = {
+  id: string;
+  file: File;
+  url: string;
+};
 
 export function NewNominationForm({ user, settings }: { user: CurrentUser | null; settings: AppSettings }) {
   const [selectedType, setSelectedType] = useState<NominationType>(settings.enabledNominationTypes[0] ?? "original");
   const [text, setText] = useState("");
-  const [fileName, setFileName] = useState("");
+  const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const [posting, setPosting] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const selectedImagesRef = useRef<SelectedImage[]>([]);
   const limit = 280;
   const count = text.length;
   const overLimit = count > limit;
@@ -24,6 +33,64 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
   const remaining = limit - count;
   const needsTargetUrl = selectedType === "quote" || selectedType === "repost" || selectedType === "reply";
   const isRepost = selectedType === "repost";
+  const mediaTitle = selectedImages.length
+    ? `${selectedImages.length} image${selectedImages.length === 1 ? "" : "s"} selected`
+    : "Add media";
+
+  useEffect(() => {
+    selectedImagesRef.current = selectedImages;
+  }, [selectedImages]);
+
+  useEffect(() => {
+    return () => {
+      selectedImagesRef.current.forEach((image) => URL.revokeObjectURL(image.url));
+    };
+  }, []);
+
+  function updateInputFiles(images: SelectedImage[]) {
+    if (!fileInputRef.current) return;
+    const dataTransfer = new DataTransfer();
+    images.forEach((image) => dataTransfer.items.add(image.file));
+    fileInputRef.current.files = dataTransfer.files;
+  }
+
+  function clearSelectedImages() {
+    setSelectedImages((current) => {
+      current.forEach((image) => URL.revokeObjectURL(image.url));
+      return [];
+    });
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function handleMediaChange(files: FileList | null) {
+    setSelectedImages((current) => {
+      const nextFiles = [...current.map((image) => image.file), ...Array.from(files ?? [])].slice(0, maxPreviewImages);
+      const next = nextFiles.map((file, index) => {
+        const existing = current[index];
+        if (existing?.file === file) return existing;
+        return {
+          id: `${file.name}-${file.lastModified}-${file.size}-${index}`,
+          file,
+          url: URL.createObjectURL(file),
+        };
+      });
+      current.forEach((image) => {
+        if (!next.some((nextImage) => nextImage.url === image.url)) URL.revokeObjectURL(image.url);
+      });
+      updateInputFiles(next);
+      return next;
+    });
+  }
+
+  function removeSelectedImage(id: string) {
+    setSelectedImages((current) => {
+      const next = current.filter((image) => image.id !== id);
+      const removed = current.find((image) => image.id === id);
+      if (removed) URL.revokeObjectURL(removed.url);
+      updateInputFiles(next);
+      return next;
+    });
+  }
 
   return (
     <Form
@@ -37,7 +104,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
         window.setTimeout(() => setPosting(false), 1800);
         window.setTimeout(() => {
           setText("");
-          setFileName("");
+          clearSelectedImages();
           formRef.current?.reset();
         }, 0);
       }}
@@ -82,17 +149,47 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
               className="relative z-10 h-[138px] w-full resize-none overflow-y-auto rounded-md border border-transparent bg-transparent p-2 text-[1.18rem] leading-[1.4] text-[#1f2421] outline-none placeholder:text-[#6e716b] [scrollbar-gutter:stable]"
             />
           </div>
+          {selectedImages.length ? (
+            <div
+              className={`mt-3 grid overflow-hidden rounded-xl border border-[#1f242129] bg-[#1f24210a] ${
+                selectedImages.length === 1 ? "grid-cols-1" : "grid-cols-2"
+              }`}
+              aria-label="Selected media"
+            >
+              {selectedImages.map((image, index) => (
+                <div
+                  className={`relative min-h-[132px] overflow-hidden bg-[#ddd4c5] md:min-h-[170px] ${
+                    selectedImages.length === 3 && index === 0 ? "row-span-2" : ""
+                  } ${index > 0 ? "border-l border-[#1f242129]" : ""} ${index > 1 ? "border-t border-[#1f242129]" : ""}`}
+                  key={image.id}
+                >
+                  <img className="h-full min-h-[132px] w-full object-cover md:min-h-[170px]" src={image.url} alt={image.file.name} />
+                  <button
+                    className="absolute top-2 right-2 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[#0f1419cc] text-white shadow-[0_2px_8px_rgba(0,0,0,0.22)] hover:bg-[#0f1419]"
+                    type="button"
+                    onClick={() => removeSelectedImage(image.id)}
+                    aria-label={`Remove ${image.file.name}`}
+                    title="Remove"
+                  >
+                    <X size={18} aria-hidden="true" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
           <div className="flex items-center gap-2.5 border-t border-[#1f242129] pt-3">
             {user && !isRepost ? (
-              <label className={iconButtonClass} title={fileName || "Add media"}>
+              <label className={iconButtonClass} title={mediaTitle}>
                 <Image size={19} aria-hidden="true" />
                 <span className={srOnlyClass}>Add media</span>
                 <input
+                  ref={fileInputRef}
                   className="hidden"
                   name="image"
                   type="file"
+                  multiple
                   accept="image/png,image/jpeg,image/webp"
-                  onChange={(event) => setFileName(event.currentTarget.files?.[0]?.name ?? "")}
+                  onChange={(event) => handleMediaChange(event.currentTarget.files)}
                 />
               </label>
             ) : !user ? (
@@ -106,7 +203,6 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
                 <span className={srOnlyClass}>Reposts cannot include media</span>
               </span>
             )}
-            {fileName ? <span className="max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap text-sm text-[#6e716b] md:max-w-[220px]">{fileName}</span> : null}
             <div className={`relative ml-auto inline-flex h-[38px] w-[38px] items-center justify-center text-xs ${overLimit ? "text-[#9f1d1d]" : "text-[#6e716b]"}`} aria-label={`${Math.abs(remaining)} characters ${overLimit ? "over" : "remaining"}`}>
               <svg className="absolute inset-0 h-[38px] w-[38px] -rotate-90" viewBox="0 0 36 36" aria-hidden="true">
                 <circle className="fill-none stroke-[#1f242124] stroke-[2.5]" cx="18" cy="18" r="15" />
@@ -137,7 +233,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
               setSelectedType(nextType);
               if (nextType === "repost") {
                 setText("");
-                setFileName("");
+                clearSelectedImages();
               }
             }}
           >
