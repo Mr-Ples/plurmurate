@@ -64,9 +64,17 @@ export default function Home() {
             </a>
           ) : null}
           <div className="grid gap-4 rounded-lg border border-[#1f242129] bg-[#fffcf47a] p-3" aria-label="Feed filters">
-            <FilterGroup title="Status" name="status" options={statusOptions} activeValue={filters.status} preserveName="type" preserveValue={filters.type} />
+            <FilterGroup
+              title="Status"
+              name="status"
+              options={statusOptions}
+              activeValue={filters.status}
+              preserveName="type"
+              preserveValue={filters.type}
+              action={filters.status || filters.type ? <Link className="border-b border-[#526f8d73] text-sm normal-case tracking-normal text-[#526f8d]" to="/">Clear filters</Link> : null}
+              reserveAction
+            />
             <FilterGroup title="Type" name="type" options={typeOptions} activeValue={filters.type} preserveName="status" preserveValue={filters.status} />
-            {(filters.status || filters.type) ? <Link className="justify-self-start border-b border-[#526f8d73] text-sm text-[#526f8d]" to="/">Clear filters</Link> : null}
           </div>
         </section>
         <section className="grid gap-3.5">
@@ -84,6 +92,8 @@ function FilterGroup({
   activeValue,
   preserveName,
   preserveValue,
+  action,
+  reserveAction = false,
 }: {
   title: string;
   name: string;
@@ -91,10 +101,19 @@ function FilterGroup({
   activeValue: string;
   preserveName: string;
   preserveValue: string;
+  action?: React.ReactNode;
+  reserveAction?: boolean;
 }) {
   return (
     <div className="grid gap-2">
-      <p className="m-0 text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">{title}</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="m-0 text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">{title}</p>
+        {reserveAction ? (
+          <span className="inline-flex min-h-[22px] min-w-[76px] justify-end">
+            {action ?? <span className="invisible border-b text-sm normal-case tracking-normal">Clear filters</span>}
+          </span>
+        ) : action}
+      </div>
       <div className="flex flex-wrap gap-1.5">
         {options.map((option) => (
           <Form key={option.value || "all"} method="get" className="m-0">

@@ -13,6 +13,5 @@ export default [
   route("settings/roles", "routes/settings.roles.tsx"),
   route("settings/publishing", "routes/settings.publishing.tsx"),
   route("settings/criteria", "routes/settings.criteria.tsx"),
-  route("me", "routes/me.tsx"),
   route("media/*", "routes/media.$.tsx"),
 ] satisfies RouteConfig;
