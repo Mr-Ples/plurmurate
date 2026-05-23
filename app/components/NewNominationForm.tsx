@@ -20,6 +20,7 @@ type SelectedImage = {
 export function NewNominationForm({ user, settings }: { user: CurrentUser | null; settings: AppSettings }) {
   const [selectedType, setSelectedType] = useState<NominationType>(settings.enabledNominationTypes[0] ?? "original");
   const [text, setText] = useState("");
+  const [targetTweetUrl, setTargetTweetUrl] = useState("");
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const [posting, setPosting] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -34,6 +35,9 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
   const needsTargetUrl = selectedType === "quote" || selectedType === "repost" || selectedType === "reply";
   const isRepost = selectedType === "repost";
   const isOriginal = selectedType === "original";
+  const targetMissing = needsTargetUrl && !targetTweetUrl.trim();
+  const textMissing = !isRepost && !text.trim();
+  const postDisabled = overLimit || targetMissing || textMissing;
   const mediaTitle = selectedImages.length
     ? `${selectedImages.length} image${selectedImages.length === 1 ? "" : "s"} selected`
     : "Add media";
@@ -106,6 +110,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
         window.setTimeout(() => setPosting(false), 1800);
         window.setTimeout(() => {
           setText("");
+          setTargetTweetUrl("");
           clearSelectedImages();
           formRef.current?.reset();
         }, 0);
@@ -236,7 +241,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
               </svg>
               {overLimit || remaining <= 20 ? <span>{remaining}</span> : null}
             </div>
-            {user ? <button className={buttonClass} disabled={overLimit}>Post</button> : <Link className={buttonClass} to="/login">Login</Link>}
+            {user ? <button className={buttonClass} disabled={postDisabled}>Post</button> : <Link className={`${buttonClass} ${postDisabled ? "pointer-events-none opacity-45" : ""}`} to="/login">Login</Link>}
           </div>
         </div>
       </section>
@@ -269,7 +274,16 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
               <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-30 w-[min(280px,70vw)] -translate-x-1/2 translate-y-1 rounded-md border border-[#1f242129] bg-[#1f2421] px-3 py-2.5 text-sm leading-snug text-[#fffaf0] opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100 group-focus:translate-y-0 group-focus:opacity-100">For reposts, replies, and quotes a URL is required</span>
             </span>
           </span>
-          <input className={`${fieldClass} disabled:cursor-not-allowed`} name="targetTweetUrl" type="url" placeholder="https://x.com/user/status/..." required={needsTargetUrl} disabled={isOriginal} />
+          <input
+            className={`${fieldClass} disabled:cursor-not-allowed`}
+            name="targetTweetUrl"
+            type="url"
+            placeholder="https://x.com/user/status/..."
+            required={needsTargetUrl}
+            disabled={isOriginal}
+            value={targetTweetUrl}
+            onChange={(event) => setTargetTweetUrl(event.currentTarget.value)}
+          />
         </label>
       </div>
       <label className="grid gap-1.5">

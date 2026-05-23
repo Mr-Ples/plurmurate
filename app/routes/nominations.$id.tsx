@@ -88,9 +88,10 @@ export default function NominationDetail() {
           </Link>
         )}
         <div className="grid gap-5 md:grid-cols-[1fr_minmax(240px,340px)]">
-        <div className="grid gap-2.5">
+        <div className="relative grid gap-3">
         {nomination.type === "reply" ? replyTargetPost : null}
-        <article className="relative overflow-hidden rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-[18px] shadow-[0_12px_30px_rgba(31,36,33,0.06)]">
+        {nomination.type === "reply" ? <span className="pointer-events-none absolute top-[calc(50%-18px)] bottom-[calc(50%-18px)] left-8 w-px bg-[#526f8d73]" aria-hidden="true" /> : null}
+        <article className={`relative overflow-hidden rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-[18px] shadow-[0_12px_30px_rgba(31,36,33,0.06)] ${nomination.type === "reply" ? "ml-auto w-[94%] md:w-[88%]" : ""}`}>
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(82,111,141,0.12),transparent_50%),linear-gradient(45deg,transparent,rgba(140,91,74,0.08))]" />
           <p className="relative m-0 text-xs uppercase tracking-[0.08em] text-[#6e716b]">{nominationTypeLabel(nomination.type)} / {nomination.status}</p>
           {nomination.type === "repost" ? (

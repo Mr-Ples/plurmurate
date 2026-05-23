@@ -97,7 +97,7 @@ export function NominationCard({
         </div>
       ) : nomination.type === "reply" ? (
         <>
-          {nomination.text ? <p className="relative mt-4 mb-[18px] border-l-2 border-[#526f8d73] pl-4 text-[clamp(1.05rem,2vw,1.45rem)] leading-[1.32]">{nomination.text}</p> : null}
+          {nomination.text ? <p className="relative mt-4 mb-[18px] border-l-2 pl-4 text-[clamp(1.05rem,2vw,1.45rem)] leading-[1.32]">{nomination.text}</p> : null}
           {media}
           {motivation}
         </>
@@ -136,9 +136,12 @@ export function NominationCard({
   );
   if (nomination.type !== "reply") return card;
   return (
-    <div className="grid gap-2.5">
+    <div className="relative grid gap-3">
       {replyTargetPost}
-      {card}
+      <span className="pointer-events-none absolute top-[calc(50%-18px)] bottom-[calc(50%-18px)] left-8 w-px bg-[#526f8d73]" aria-hidden="true" />
+      <div className="ml-auto w-[94%] md:w-[88%]">
+        {card}
+      </div>
     </div>
   );
 }
