@@ -1,3 +1,4 @@
+import { Repeat2 } from "lucide-react";
 import { Form, useLocation, useNavigate } from "react-router";
 import { TargetTweetCard } from "~/components/TargetTweetCard";
 import { nominationTypeLabel, type FeedNomination } from "~/domain/nominations";
@@ -31,6 +32,25 @@ export function NominationCard({
     : nomination.nominationMediaUrl
       ? [nomination.nominationMediaUrl]
       : [];
+  const targetPost = <TargetTweetCard tweet={nomination.targetTweet} fallbackUrl={nomination.targetTweetUrl} fallbackId={nomination.targetTweetId} flush />;
+  const motivation = nomination.rationale ? (
+    <div className="relative mt-4 rounded-md border border-[#1f242129] bg-white/35 p-3 text-sm leading-snug text-[#526f8d]">
+      <p className="m-0 text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Motivation</p>
+      <p className="mt-1.5 mb-0 text-[#1f2421]">{nomination.rationale}</p>
+    </div>
+  ) : null;
+  const media = nominationMediaUrls.length ? (
+    <div className={`relative my-3.5 grid overflow-hidden rounded-md border border-[#1f242129] ${nominationMediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+      {nominationMediaUrls.map((url, index) => (
+        <img
+          className={`w-full object-cover ${nominationMediaUrls.length === 3 && index === 0 ? "row-span-2 h-[300px]" : nominationMediaUrls.length === 1 ? "max-h-[420px] min-h-[150px]" : "h-[150px]"} ${index > 0 ? "border-l border-[#1f242129]" : ""} ${index > 1 ? "border-t border-[#1f242129]" : ""}`}
+          src={url}
+          alt=""
+          key={`${url}-${index}`}
+        />
+      ))}
+    </div>
+  ) : null;
   return (
     <article
       className="relative cursor-pointer overflow-hidden rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-[18px] shadow-[0_12px_30px_rgba(31,36,33,0.06)]"
@@ -68,26 +88,27 @@ export function NominationCard({
           </p>
         </div>
       </div>
-      {nomination.text ? <p className="relative my-[18px] text-[clamp(1.05rem,2vw,1.45rem)] leading-[1.32]">{nomination.text}</p> : null}
-      <TargetTweetCard tweet={nomination.targetTweet} fallbackUrl={nomination.targetTweetUrl} fallbackId={nomination.targetTweetId} />
-      {nominationMediaUrls.length ? (
-        <div className={`relative my-3.5 grid overflow-hidden rounded-md border border-[#1f242129] ${nominationMediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
-          {nominationMediaUrls.map((url, index) => (
-            <img
-              className={`w-full object-cover ${nominationMediaUrls.length === 3 && index === 0 ? "row-span-2 h-[300px]" : nominationMediaUrls.length === 1 ? "max-h-[420px] min-h-[150px]" : "h-[150px]"} ${index > 0 ? "border-l border-[#1f242129]" : ""} ${index > 1 ? "border-t border-[#1f242129]" : ""}`}
-              src={url}
-              alt=""
-              key={`${url}-${index}`}
-            />
-          ))}
+      {nomination.type === "repost" ? (
+        <div className="relative mt-4">
+          <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-[#6e716b]"><Repeat2 size={16} aria-hidden="true" /> Repost</p>
+          {targetPost}
+          {motivation}
         </div>
-      ) : null}
-      {nomination.rationale ? (
-        <div className="relative mt-4 rounded-md border border-[#1f242129] bg-white/35 p-3 text-sm leading-snug text-[#526f8d]">
-          <p className="m-0 text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Motivation</p>
-          <p className="mt-1.5 mb-0 text-[#1f2421]">{nomination.rationale}</p>
-        </div>
-      ) : null}
+      ) : nomination.type === "reply" ? (
+        <>
+          {targetPost}
+          {nomination.text ? <p className="relative mt-4 mb-[18px] border-l-2 border-[#526f8d73] pl-4 text-[clamp(1.05rem,2vw,1.45rem)] leading-[1.32]">{nomination.text}</p> : null}
+          {media}
+          {motivation}
+        </>
+      ) : (
+        <>
+          {nomination.text ? <p className="relative my-[18px] text-[clamp(1.05rem,2vw,1.45rem)] leading-[1.32]">{nomination.text}</p> : null}
+          {media}
+          {motivation}
+          {targetPost}
+        </>
+      )}
       <div className="relative mt-[18px] flex items-center gap-2">
         {(["A", "B", "U"] as const).map((value) => (
           <Form method="post" action="/nominations/new" key={value} className="m-0" onClick={(event) => event.stopPropagation()}>

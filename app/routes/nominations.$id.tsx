@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Repeat2 } from "lucide-react";
 import { Form, Link, redirect, useLoaderData, useLocation, useNavigate } from "react-router";
 import { AppShell } from "~/components/AppShell";
 import { TargetTweetCard } from "~/components/TargetTweetCard";
@@ -53,6 +53,25 @@ export default function NominationDetail() {
     : nomination.nominationMediaUrl
       ? [nomination.nominationMediaUrl]
       : [];
+  const targetPost = <TargetTweetCard tweet={nomination.targetTweet} fallbackUrl={nomination.targetTweetUrl} fallbackId={nomination.targetTweetId} flush />;
+  const media = nominationMediaUrls.length ? (
+    <div className={`relative my-3.5 grid overflow-hidden rounded-md border border-[#1f242129] ${nominationMediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+      {nominationMediaUrls.map((url, index) => (
+        <img
+          className={`w-full object-cover ${nominationMediaUrls.length === 3 && index === 0 ? "row-span-2 h-[340px]" : nominationMediaUrls.length === 1 ? "max-h-[420px] min-h-[170px]" : "h-[170px]"} ${index > 0 ? "border-l border-[#1f242129]" : ""} ${index > 1 ? "border-t border-[#1f242129]" : ""}`}
+          src={url}
+          alt=""
+          key={`${url}-${index}`}
+        />
+      ))}
+    </div>
+  ) : null;
+  const motivation = nomination.rationale ? (
+    <div className="relative my-4 rounded-md border border-[#1f242129] bg-white/35 p-3 text-sm leading-snug text-[#526f8d]">
+      <p className="m-0 text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Motivation</p>
+      <p className="mt-1.5 mb-0 text-[#1f2421]">{nomination.rationale}</p>
+    </div>
+  ) : null;
   return (
     <AppShell user={user}>
       <main className="grid gap-5 py-[42px] pb-20">
@@ -71,26 +90,27 @@ export default function NominationDetail() {
         <article className="relative overflow-hidden rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-[18px] shadow-[0_12px_30px_rgba(31,36,33,0.06)]">
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(82,111,141,0.12),transparent_50%),linear-gradient(45deg,transparent,rgba(140,91,74,0.08))]" />
           <p className="relative m-0 text-xs uppercase tracking-[0.08em] text-[#6e716b]">{nominationTypeLabel(nomination.type)} / {nomination.status}</p>
-          <h1 className="relative text-[clamp(1.35rem,3vw,2.25rem)] leading-[1.18] font-medium">{nomination.text ?? nomination.targetTweetUrl}</h1>
-          <TargetTweetCard tweet={nomination.targetTweet} fallbackUrl={nomination.targetTweetUrl} fallbackId={nomination.targetTweetId} />
-          {nominationMediaUrls.length ? (
-            <div className={`relative my-3.5 grid overflow-hidden rounded-md border border-[#1f242129] ${nominationMediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
-              {nominationMediaUrls.map((url, index) => (
-                <img
-                  className={`w-full object-cover ${nominationMediaUrls.length === 3 && index === 0 ? "row-span-2 h-[340px]" : nominationMediaUrls.length === 1 ? "max-h-[420px] min-h-[170px]" : "h-[170px]"} ${index > 0 ? "border-l border-[#1f242129]" : ""} ${index > 1 ? "border-t border-[#1f242129]" : ""}`}
-                  src={url}
-                  alt=""
-                  key={`${url}-${index}`}
-                />
-              ))}
+          {nomination.type === "repost" ? (
+            <div className="relative mt-4">
+              <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-[#6e716b]"><Repeat2 size={16} aria-hidden="true" /> Repost</p>
+              {targetPost}
+              {motivation}
             </div>
-          ) : null}
-          {nomination.rationale ? (
-            <div className="relative my-4 rounded-md border border-[#1f242129] bg-white/35 p-3 text-sm leading-snug text-[#526f8d]">
-              <p className="m-0 text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Motivation</p>
-              <p className="mt-1.5 mb-0 text-[#1f2421]">{nomination.rationale}</p>
-            </div>
-          ) : null}
+          ) : nomination.type === "reply" ? (
+            <>
+              {targetPost}
+              {nomination.text ? <h1 className="relative mt-4 mb-[18px] border-l-2 border-[#526f8d73] pl-4 text-[clamp(1.35rem,3vw,2.25rem)] leading-[1.18] font-medium">{nomination.text}</h1> : null}
+              {media}
+              {motivation}
+            </>
+          ) : (
+            <>
+              <h1 className="relative text-[clamp(1.35rem,3vw,2.25rem)] leading-[1.18] font-medium">{nomination.text ?? nomination.targetTweetUrl}</h1>
+              {media}
+              {motivation}
+              {targetPost}
+            </>
+          )}
           <Form method="post" className="relative flex flex-wrap gap-2.5" title={isCreator && !settings.creatorSelfVoteAllowed ? "You cannot vote on your own nomination." : undefined}>
             <input type="hidden" name="_intent" value="vote" />
             <input type="hidden" name="nominationId" value={nomination.id} />

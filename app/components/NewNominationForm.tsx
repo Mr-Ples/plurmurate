@@ -116,7 +116,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
           <span className="h-8 w-8 animate-spin rounded-full border-2 border-[#1f242129] border-t-[#1f2421]" />
         </div>
       ) : null}
-      <section className={`grid grid-cols-[40px_minmax(0,1fr)] gap-3 rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-3 md:grid-cols-[52px_minmax(0,1fr)] md:gap-3.5 md:p-4 ${isRepost ? "pointer-events-none opacity-50" : ""}`}>
+      <section className="grid grid-cols-[40px_minmax(0,1fr)] gap-3 rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-3 md:grid-cols-[52px_minmax(0,1fr)] md:gap-3.5 md:p-4">
         {user?.profileImageUrl ? (
           <img className="flex h-10 w-10 items-center justify-center rounded-full bg-[#ddd4c5] object-cover md:h-12 md:w-12" src={user.profileImageUrl} alt="" />
         ) : (

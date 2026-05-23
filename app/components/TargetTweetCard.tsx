@@ -6,10 +6,12 @@ export function TargetTweetCard({
   tweet,
   fallbackUrl,
   fallbackId,
+  flush = false,
 }: {
   tweet: ExternalTweetPreview | null;
   fallbackUrl: string | null;
   fallbackId: string | null;
+  flush?: boolean;
 }) {
   const url = tweet?.url ?? fallbackUrl ?? "#";
   const username = tweet?.authorUsername;
@@ -46,7 +48,7 @@ export function TargetTweetCard({
     return (
       <div
         ref={embedRef}
-        className="relative mt-3.5 overflow-hidden rounded-lg border border-[#1f242129] bg-white/55 px-3.5 py-2 text-[#1f2421]"
+        className={`relative mt-3.5 max-w-full overflow-hidden text-[#1f2421] ${flush ? "" : "rounded-lg border border-[#1f242129] bg-white/55 px-3.5 py-2"}`}
         onClick={(event) => event.stopPropagation()}
         dangerouslySetInnerHTML={{ __html: tweet.embedHtml }}
       />
