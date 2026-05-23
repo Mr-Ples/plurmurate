@@ -1,0 +1,35 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "plurmurate",
+  "main": "./workers/app.ts",
+  "compatibility_date": "2026-05-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./build/client"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "APP_BASE_URL": "http://localhost:5173",
+    "DATABASE_PROVIDER": "sqlite",
+    "STORAGE_PROVIDER": "local-r2",
+    "PUBLISHING_WORKFLOW": "manual_review_when_qualified",
+    "X_HOST_USER_ID": "",
+    "X_HOST_HANDLE": ""
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "plurmurate",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "drizzle/migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "plurmurate-media"
+    }
+  ]
+}
