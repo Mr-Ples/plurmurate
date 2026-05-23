@@ -196,6 +196,12 @@ npx wrangler secret put X_CLIENT_ID
 npx wrangler secret put X_CLIENT_SECRET
 ```
 
+Publishing uses the stored OAuth tokens for the configured host account after that account logs in. If you want publishing to work without relying on a stored host login, also set:
+
+```bash
+npx wrangler secret put X_PUBLISHING_ACCESS_TOKEN
+```
+
 Apply remote migrations and deploy:
 
 ```bash

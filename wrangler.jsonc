@@ -13,23 +13,18 @@
 		"enabled": true
 	},
 	"vars": {
-		"DATABASE_PROVIDER": "sqlite",
-		"STORAGE_PROVIDER": "local-r2",
+		"DATABASE_PROVIDER": "d1",
+		"STORAGE_PROVIDER": "r2",
 		"PUBLISHING_WORKFLOW": "manual_review_when_qualified",
-		"X_HOST_USER_ID": "",
-		"X_HOST_HANDLE": ""
+		"X_HOST_USER_ID": "1521528464154808323",
+		"X_HOST_HANDLE": "evalladen"
 	},
 	"d1_databases": [
 		{
 			"binding": "DB",
 			"database_name": "plurmurate",
-			"database_id": "00000000-0000-0000-0000-000000000000",
+			"database_id": "ce101d52-2d03-4737-9247-69cdce9168a4",
 			"migrations_dir": "drizzle/migrations"
-		},
-		{
-			"binding": "plurmurate",
-			"database_name": "plurmurate",
-			"database_id": "ce101d52-2d03-4737-9247-69cdce9168a4"
 		}
 	],
 	"r2_buckets": [
