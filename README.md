@@ -21,12 +21,30 @@ For both apps, configure user authentication:
   - Do not choose **Read and write and Direct message**.
 - Type of App: **Web App, Automated App or Bot**.
   - Do not choose **Native App**.
+- Use any temporary placeholder URL for now until the app has been deployed or tunneled.
 
-Initial app info:
+Create prodcution and staging secrets:
 
-- Use any temporary placeholder URL until the app has been deployed or tunneled.
-- After you have the real URL, update both the Website URL and callback URL.
-- The callback URL format is `{site-url}/auth/x/callback`.
+```bash
+cp .dev.vars.staging.example .dev.vars.staging
+cp .dev.vars.production.example .dev.vars.production
+```
+
+Edit `.dev.vars.staging`:
+
+```env
+SESSION_SECRET=replace-with-at-least-32-random-characters
+X_CLIENT_ID=your-staging-x-oauth-client-id
+X_CLIENT_SECRET=your-staging-x-oauth-client-secret
+```
+
+Edit `.dev.vars.production`:
+
+```env
+SESSION_SECRET=replace-with-at-least-32-random-characters
+X_CLIENT_ID=your-production-x-oauth-client-id
+X_CLIENT_SECRET=your-production-x-oauth-client-secret
+```
 
 Staging/local URL flow:
 
@@ -34,27 +52,6 @@ Staging/local URL flow:
 npm run dev
 # After it starts
 # run the dev tunnel server terminal: press t, then Enter
-```
-
-You need to edit the staging X app callback and base url each time you restart the server:
-- Use the Cloudflare tunnel URL as the `plurmurate-staging` Website URL.
-- Use `{tunnel-url}/auth/x/callback` as the `plurmurate-staging` callback URL.
-
-For production you need to change the URL only once, after you followed the deploy steps below
-
-
-This app requests these X scopes:
-
-```text
-users.read tweet.read tweet.write media.write offline.access follows.read
-```
-
-Required secret values:
-
-```env
-SESSION_SECRET=replace-with-at-least-32-random-characters
-X_CLIENT_ID=your-x-oauth-client-id
-X_CLIENT_SECRET=your-x-oauth-client-secret
 ```
 
 ## App Setup
@@ -65,19 +62,18 @@ Install dependencies:
 npm install
 ```
 
-Create local staging secrets:
+Create local Wrangler config:
 
 ```bash
-cp .dev.vars.staging.example .dev.vars.staging
+cp wrangler.example.jsonc wrangler.jsonc
 ```
 
-Edit `.dev.vars.staging`:
+Edit `wrangler.jsonc`:
 
-```env
-SESSION_SECRET=replace-with-at-least-32-random-characters
-X_CLIENT_ID=your-staging-x-oauth-client-id
-X_CLIENT_SECRET=your-staging-x-oauth-client-secret
-```
+- Set `env.staging.d1_databases[0].database_id`.
+- Set `env.production.d1_databases[0].database_id`.
+- Set `X_HOST_USER_ID` and `X_HOST_HANDLE` in each environment if you know them.
+- Keep binding names as `DB` and `MEDIA_BUCKET`.
 
 Apply local D1 migrations, then start the dev server:
 
@@ -91,6 +87,8 @@ Local dev behavior:
 - `npm run dev` uses `CLOUDFLARE_ENV=staging`.
 - Wrangler reads `env.staging` from `wrangler.jsonc`.
 - Wrangler loads secrets from `.dev.vars.staging`.
+- `wrangler.jsonc` is local-only and ignored by Git.
+- `wrangler.example.jsonc` is the tracked template for forks.
 
 ## Cloudflare Environments
 

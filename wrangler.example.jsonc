@@ -1,0 +1,65 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "plurmurate",
+	"main": "./workers/app.ts",
+	"compatibility_date": "2026-05-20",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"assets": {
+		"directory": "./build/client"
+	},
+	"observability": {
+		"enabled": true
+	},
+	"env": {
+		"staging": {
+			"name": "plurmurate-staging",
+			"vars": {
+				"DATABASE_PROVIDER": "d1",
+				"STORAGE_PROVIDER": "r2",
+				"PUBLISHING_WORKFLOW": "manual_review_when_qualified",
+				"X_HOST_USER_ID": "",
+				"X_HOST_HANDLE": ""
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "plurmurate-staging",
+					"database_id": "replace-with-staging-d1-database-id",
+					"migrations_dir": "drizzle/migrations"
+				}
+			],
+			"r2_buckets": [
+				{
+					"binding": "MEDIA_BUCKET",
+					"bucket_name": "plurmurate-media-staging"
+				}
+			]
+		},
+		"production": {
+			"name": "plurmurate",
+			"vars": {
+				"DATABASE_PROVIDER": "d1",
+				"STORAGE_PROVIDER": "r2",
+				"PUBLISHING_WORKFLOW": "manual_review_when_qualified",
+				"X_HOST_USER_ID": "",
+				"X_HOST_HANDLE": ""
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "plurmurate-production",
+					"database_id": "replace-with-production-d1-database-id",
+					"migrations_dir": "drizzle/migrations"
+				}
+			],
+			"r2_buckets": [
+				{
+					"binding": "MEDIA_BUCKET",
+					"bucket_name": "plurmurate-media-production"
+				}
+			]
+		}
+	}
+}
