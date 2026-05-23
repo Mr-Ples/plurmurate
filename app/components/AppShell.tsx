@@ -9,7 +9,7 @@ export function AppShell({ user, children }: { user: CurrentUser | null; childre
       <header className="flex flex-col items-start justify-between gap-3.5 border-b border-[#1f242129] py-[22px] pb-3 md:flex-row md:items-center">
         <Link className="font-serif text-[1.4rem]" to="/">Plurmurate</Link>
         <nav className="flex flex-wrap items-center gap-3.5 text-[#6e716b]">
-          <Link to="/nominations/new">New Post</Link>
+          <Link to="/#new-post">New Post</Link>
           {user ? (
             <details className="group relative">
               <summary className="flex cursor-pointer list-none items-center gap-1 rounded-md border border-[#1f242129] bg-white/35 px-2.5 py-1.5 text-[#1f2421] [&::-webkit-details-marker]:hidden">

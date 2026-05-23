@@ -1,12 +1,15 @@
 import { useMemo, useState } from "react";
 import { redirect, useLoaderData } from "react-router";
 import { AppShell } from "~/components/AppShell";
+import { NewNominationForm } from "~/components/NewNominationForm";
 import { NominationCard } from "~/components/NominationCard";
 import { nominationStatuses, nominationTypes } from "~/domain/nominations";
 import { getSettings } from "~/services/settings-service";
 import { getCurrentUser } from "~/lib/auth/session";
 import { getRepositories } from "~/repositories/drizzle/repositories";
 import { voteOnNomination } from "~/services/vote-service";
+import { createNomination } from "~/services/nomination-service";
+import { storeNominationImage } from "~/services/media-service";
 
 export async function loader({ request, context }: any) {
   const user = await getCurrentUser(request, context);
@@ -16,6 +19,7 @@ export async function loader({ request, context }: any) {
   const host = users.find((candidate) => candidate.xUserId === settings.hostUserId || candidate.username?.toLowerCase() === settings.hostHandle.toLowerCase()) ?? null;
   return {
     user,
+    settings,
     host: settings.hostHandle
       ? {
           handle: settings.hostHandle.replace(/^@/, ""),
@@ -32,12 +36,21 @@ export async function loader({ request, context }: any) {
 export async function action({ request, context }: any) {
   const user = await getCurrentUser(request, context);
   if (!user) throw redirect("/login");
-  await voteOnNomination(context, user, await request.formData());
-  return null;
+  const formData = await request.formData();
+  if (formData.get("_intent") === "vote") {
+    await voteOnNomination(context, user, formData);
+    return null;
+  }
+  const nomination = await createNomination(context, user, formData);
+  const image = formData.get("image");
+  if (image instanceof File && image.size > 0) {
+    await storeNominationImage(context, user, nomination.id, image, "nomination_image", new URL(request.url).origin);
+  }
+  return redirect(`/nominations/${nomination.id}`);
 }
 
 export default function Home() {
-  const { user, nominations, host } = useLoaderData<typeof loader>();
+  const { user, settings, nominations, host } = useLoaderData<typeof loader>();
   const [filters, setFilters] = useState({ status: "", type: "" });
   const statusOptions = [
     { value: "", label: "All" },
@@ -76,6 +89,7 @@ export default function Home() {
           </div>
         </section>
         <section className="grid gap-3.5">
+          <NewNominationForm user={user} settings={settings} />
           {filteredNominations.length ? filteredNominations.map((nomination) => <NominationCard key={nomination.id} nomination={nomination} user={user} />) : <p className="text-[#6e716b]">{nominations.length ? "No nominations match those filters." : "No nominations yet."}</p>}
         </section>
       </main>
