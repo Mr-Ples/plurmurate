@@ -48,6 +48,8 @@ X_CLIENT_SECRET=your-production-x-oauth-client-secret
 
 ## App Setup
 
+### Staging/local
+
 Create local Wrangler config:
 
 ```bash
@@ -58,6 +60,9 @@ Create the staging D1 database:
 
 ```bash
 npx wrangler d1 create plurmurate
+# If it asks to add the config on your behalf say No
+npx wrangler r2 bucket create plurmurate-media
+# If it asks to add the config on your behalf say No
 ```
 
 Edit `wrangler.jsonc`:
@@ -69,92 +74,28 @@ Apply migrations to the local D1 database, then start the dev server:
 
 ```bash
 npm run db:migrate:local
-npm run dev
-```
-
-Apply the same migrations to the remote staging D1 database before deploying
-staging:
-
-```bash
 npm run db:migrate:staging:remote
+npm run dev
+# once its running start a tunnel by tapping t + enter
 ```
 
-Local dev behavior:
+Copy the URL from the tunnel to the staging X app configuration **Website URL** and **Callback URI / Redirect URL** setting (you need to do this every time you start the local tunnel):
+- Website URL: https://tunnel-url.cloudflare.com
+- Callback URI / Redirect URL: https://tunnel-url.cloudflare.com/x/callback
 
-- `npm run dev` uses `CLOUDFLARE_ENV=staging`.
-- Wrangler reads `env.staging` from `wrangler.jsonc`.
-- Wrangler loads secrets from `.dev.vars.staging`.
-- `wrangler.jsonc` is local-only and ignored by Git.
-- `wrangler.example.jsonc` is the tracked template for forks.
-
-## Cloudflare Environments
-
-Named Wrangler environments:
-
-- `staging`: used by `npm run dev`, local D1 migrations, and staging deploys. It deploys to the `plurmurate-staging` Worker.
-- `production`: used for the live app. It deploys to the `plurmurate` Worker.
-
-Wrangler config rules:
-
-- Each environment needs its own `vars`, `d1_databases`, and `r2_buckets`.
-- Wrangler does not inherit those keys from the top level into named environments.
-- Old Workers from previous experiments can be ignored unless you intentionally reuse them.
-
-Intended split:
-
-```text
-staging Worker:     plurmurate-staging
-production Worker:  plurmurate
-
-staging D1:         plurmurate
-production D1:      plurmurate-production
-
-staging R2:         plurmurate-media
-production R2:      plurmurate-media-production
-```
-
-Binding names:
-
-- Resource names can differ by environment.
-- Binding names must stay `DB` and `MEDIA_BUCKET` because the app reads `env.DB` and `env.MEDIA_BUCKET`.
-
-## Production Setup
+### Production
 
 Create production resources:
 
 ```bash
 npx wrangler d1 create plurmurate-production
+# If it asks to add the config on your behalf say No
 npx wrangler r2 bucket create plurmurate-media-production
+# If it asks to add the config on your behalf say No
 ```
 
-Update `wrangler.jsonc`:
-
-- Set `env.production.d1_databases[0].database_id` to the production D1 `database_id`.
-
-Create production secrets:
-
-```bash
-cp .dev.vars.production.example .dev.vars.production
-```
-
-Edit `.dev.vars.production` with only secrets:
-
-```env
-SESSION_SECRET=replace-with-at-least-32-random-characters
-X_CLIENT_ID=your-production-x-oauth-client-id
-X_CLIENT_SECRET=your-production-x-oauth-client-secret
-X_PUBLISHING_ACCESS_TOKEN=
-X_PUBLISHING_REFRESH_TOKEN=
-```
-
-Do not include keys already configured as plain `vars` in `wrangler.jsonc`:
-
-```text
-DATABASE_PROVIDER
-STORAGE_PROVIDER
-X_HOST_USER_ID
-X_HOST_HANDLE
-```
+Edit `wrangler.jsonc`:
+- Set the `database_id` printed by `npx wrangler d1 create plurmurate-production`.
 
 Upload production secrets:
 
@@ -176,19 +117,4 @@ npm run deploy:production
 npm run db:migrate:staging:remote
 npm run build:staging
 npm run deploy:staging
-```
-
-## Scripts
-
-```bash
-npm run dev                            # Start local dev against env.staging
-npm run build:staging                  # Build the staging app
-npm run build:production               # Build the production app
-npm run typecheck                      # Run TypeScript checks
-npm run lint                           # Run ESLint
-npm run db:migrate:local               # Apply local D1 migrations for staging dev
-npm run db:migrate:staging:remote      # Apply remote D1 migrations to staging
-npm run db:migrate:production:remote   # Apply remote D1 migrations to production
-npm run deploy:staging                 # Deploy staging with Wrangler
-npm run deploy:production              # Deploy production with Wrangler
 ```
