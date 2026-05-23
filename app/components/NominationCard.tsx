@@ -25,6 +25,11 @@ export function NominationCard({
   const expandedPath = `/nominations/${nomination.id}`;
   const creatorProfileUrl = nomination.creatorUsername ? `https://x.com/${nomination.creatorUsername}` : null;
   const openExpandedView = () => navigate(expandedPath, { state: { from: `${location.pathname}${location.search}` } });
+  const nominationMediaUrls = nomination.nominationMediaUrls.length
+    ? nomination.nominationMediaUrls
+    : nomination.nominationMediaUrl
+      ? [nomination.nominationMediaUrl]
+      : [];
   return (
     <article
       className="relative cursor-pointer overflow-hidden rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-[18px] shadow-[0_12px_30px_rgba(31,36,33,0.06)]"
@@ -64,7 +69,18 @@ export function NominationCard({
       </div>
       {nomination.text ? <p className="relative my-[18px] text-[clamp(1.05rem,2vw,1.45rem)] leading-[1.32]">{nomination.text}</p> : null}
       {nomination.targetTweetUrl ? <span className="relative inline-block border-b border-[#526f8d73] text-[#526f8d]">Target X post {nomination.targetTweetId}</span> : null}
-      {nomination.nominationMediaUrl ? <img className="relative my-3.5 block max-h-[420px] w-full rounded-md object-cover" src={nomination.nominationMediaUrl} alt="" /> : null}
+      {nominationMediaUrls.length ? (
+        <div className={`relative my-3.5 grid overflow-hidden rounded-md border border-[#1f242129] ${nominationMediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+          {nominationMediaUrls.map((url, index) => (
+            <img
+              className={`h-full max-h-[420px] min-h-[150px] w-full object-cover ${nominationMediaUrls.length === 3 && index === 0 ? "row-span-2" : ""} ${index > 0 ? "border-l border-[#1f242129]" : ""} ${index > 1 ? "border-t border-[#1f242129]" : ""}`}
+              src={url}
+              alt=""
+              key={`${url}-${index}`}
+            />
+          ))}
+        </div>
+      ) : null}
       {nomination.rationale ? (
         <div className="relative mt-4 rounded-md border border-[#1f242129] bg-white/35 p-3 text-sm leading-snug text-[#526f8d]">
           <p className="m-0 text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Motivation</p>

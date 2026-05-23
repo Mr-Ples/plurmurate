@@ -184,6 +184,9 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
                 className={`${iconButtonClass} ${mediaLimitReached ? "cursor-not-allowed opacity-45" : ""}`}
                 title={mediaLimitReached ? "Maximum 4 images" : mediaTitle}
                 aria-disabled={mediaLimitReached}
+                onClick={(event) => {
+                  if (mediaLimitReached) event.preventDefault();
+                }}
               >
                 <Image size={19} aria-hidden="true" />
                 <span className={srOnlyClass}>Add media</span>
@@ -193,7 +196,6 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
                   name="image"
                   type="file"
                   multiple
-                  disabled={mediaLimitReached}
                   accept="image/png,image/jpeg,image/webp"
                   onChange={(event) => handleMediaChange(event.currentTarget.files)}
                 />

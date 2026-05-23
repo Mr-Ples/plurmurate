@@ -42,8 +42,8 @@ export async function action({ request, context }: any) {
     return null;
   }
   const nomination = await createNomination(context, user, formData);
-  const image = formData.get("image");
-  if (image instanceof File && image.size > 0) {
+  const images = formData.getAll("image").filter((image: unknown): image is File => image instanceof File && image.size > 0).slice(0, 4);
+  for (const image of images) {
     await storeNominationImage(context, user, nomination.id, image, "nomination_image", new URL(request.url).origin);
   }
   return redirect("/");

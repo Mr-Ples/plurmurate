@@ -41,6 +41,11 @@ export default function NominationDetail() {
   const from = (location.state as { from?: string } | null)?.from;
   const backTo = from?.startsWith("/") ? from : "/";
   const backClass = "inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-md border border-[#1f242129] bg-white/35 px-3 py-2 text-[#1f2421] hover:border-[#1f24214d] hover:bg-[#fffcf4d1]";
+  const nominationMediaUrls = nomination.nominationMediaUrls.length
+    ? nomination.nominationMediaUrls
+    : nomination.nominationMediaUrl
+      ? [nomination.nominationMediaUrl]
+      : [];
   return (
     <AppShell user={user}>
       <main className="grid gap-5 py-[42px] pb-20">
@@ -61,7 +66,18 @@ export default function NominationDetail() {
           <p className="relative m-0 text-xs uppercase tracking-[0.08em] text-[#6e716b]">{nominationTypeLabel(nomination.type)} / {nomination.status}</p>
           <h1 className="relative text-[clamp(1.35rem,3vw,2.25rem)] leading-[1.18] font-medium">{nomination.text ?? nomination.targetTweetUrl}</h1>
           {nomination.targetTweetUrl ? <a className="relative inline-block border-b border-[#526f8d73] text-[#526f8d]" href={nomination.targetTweetUrl}>Target X post {nomination.targetTweetId}</a> : null}
-          {nomination.nominationMediaUrl ? <img className="relative my-3.5 block max-h-[420px] w-full rounded-md object-cover" src={nomination.nominationMediaUrl} alt="" /> : null}
+          {nominationMediaUrls.length ? (
+            <div className={`relative my-3.5 grid overflow-hidden rounded-md border border-[#1f242129] ${nominationMediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+              {nominationMediaUrls.map((url, index) => (
+                <img
+                  className={`h-full max-h-[420px] min-h-[170px] w-full object-cover ${nominationMediaUrls.length === 3 && index === 0 ? "row-span-2" : ""} ${index > 0 ? "border-l border-[#1f242129]" : ""} ${index > 1 ? "border-t border-[#1f242129]" : ""}`}
+                  src={url}
+                  alt=""
+                  key={`${url}-${index}`}
+                />
+              ))}
+            </div>
+          ) : null}
           {nomination.rationale ? (
             <div className="relative my-4 rounded-md border border-[#1f242129] bg-white/35 p-3 text-sm leading-snug text-[#526f8d]">
               <p className="m-0 text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Motivation</p>

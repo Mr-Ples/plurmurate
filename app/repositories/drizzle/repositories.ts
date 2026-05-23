@@ -247,6 +247,15 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
               .from(votes)
               .where(and(eq(votes.nominationId, row.nomination.id), sql`${votes.comment} IS NOT NULL AND ${votes.comment} != ''`))
               .get();
+            const nominationMediaRows = await db
+              .select({ publicUrl: mediaAssets.publicUrl })
+              .from(mediaAssets)
+              .where(and(eq(mediaAssets.nominationId, row.nomination.id), eq(mediaAssets.kind, "nomination_image"), sql`${mediaAssets.publicUrl} IS NOT NULL`))
+              .orderBy(mediaAssets.createdAt)
+              .all();
+            const nominationMediaUrls = nominationMediaRows
+              .map((media) => media.publicUrl)
+              .filter((url): url is string => Boolean(url));
             return {
               ...mapNomination(row.nomination),
               creatorUsername: row.creatorUsername,
@@ -259,6 +268,7 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
               userVote: (userVote?.value as VoteValue | undefined) ?? null,
               recentVoteComment: recentComment?.comment ?? null,
               nominationMediaUrl: row.nominationMediaUrl,
+              nominationMediaUrls,
               tweetAvatarUrl: row.creatorProfileImageUrl,
             };
           }),

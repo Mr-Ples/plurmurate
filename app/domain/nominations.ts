@@ -52,5 +52,6 @@ export interface FeedNomination extends Nomination {
   userVote: "A" | "B" | "U" | null;
   recentVoteComment: string | null;
   nominationMediaUrl: string | null;
+  nominationMediaUrls: string[];
   tweetAvatarUrl: string | null;
 }
