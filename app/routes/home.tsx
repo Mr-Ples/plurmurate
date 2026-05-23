@@ -1,4 +1,5 @@
-import { Form, Link, redirect, useLoaderData } from "react-router";
+import { useMemo, useState } from "react";
+import { redirect, useLoaderData } from "react-router";
 import { AppShell } from "~/components/AppShell";
 import { NominationCard } from "~/components/NominationCard";
 import { nominationStatuses, nominationTypes } from "~/domain/nominations";
@@ -9,17 +10,12 @@ import { voteOnNomination } from "~/services/vote-service";
 
 export async function loader({ request, context }: any) {
   const user = await getCurrentUser(request, context);
-  const url = new URL(request.url);
   const repos = getRepositories(context.cloudflare.env);
   const settings = await getSettings(context);
   const users = await repos.users.listUsers();
   const host = users.find((candidate) => candidate.xUserId === settings.hostUserId || candidate.username?.toLowerCase() === settings.hostHandle.toLowerCase()) ?? null;
   return {
     user,
-    filters: {
-      status: url.searchParams.get("status") ?? "",
-      type: url.searchParams.get("type") ?? "",
-    },
     host: settings.hostHandle
       ? {
           handle: settings.hostHandle.replace(/^@/, ""),
@@ -29,8 +25,6 @@ export async function loader({ request, context }: any) {
       : null,
     nominations: await repos.nominations.listFeed({
       viewerUserId: user?.id,
-      status: url.searchParams.get("status"),
-      type: url.searchParams.get("type"),
     }),
   };
 }
@@ -43,12 +37,18 @@ export async function action({ request, context }: any) {
 }
 
 export default function Home() {
-  const { user, nominations, filters, host } = useLoaderData<typeof loader>();
+  const { user, nominations, host } = useLoaderData<typeof loader>();
+  const [filters, setFilters] = useState({ status: "", type: "" });
   const statusOptions = [
     { value: "", label: "All" },
     ...nominationStatuses.filter((status) => status !== "draft").map((status) => ({ value: status, label: status })),
   ];
   const typeOptions = [{ value: "", label: "All" }, ...nominationTypes.map((type) => ({ value: type, label: type }))];
+  const filteredNominations = useMemo(
+    () => nominations.filter((nomination) => (!filters.status || nomination.status === filters.status) && (!filters.type || nomination.type === filters.type)),
+    [filters.status, filters.type, nominations],
+  );
+  const hasActiveFilters = Boolean(filters.status || filters.type);
   return (
     <AppShell user={user}>
       <main className="grid gap-9 py-[34px] pb-[70px] md:grid-cols-[minmax(180px,280px)_1fr]">
@@ -66,19 +66,17 @@ export default function Home() {
           <div className="grid gap-4 rounded-lg border border-[#1f242129] bg-[#fffcf47a] p-3" aria-label="Feed filters">
             <FilterGroup
               title="Status"
-              name="status"
               options={statusOptions}
               activeValue={filters.status}
-              preserveName="type"
-              preserveValue={filters.type}
-              action={filters.status || filters.type ? <Link className="border-b border-[#526f8d73] text-sm normal-case tracking-normal text-[#526f8d]" to="/">Clear filters</Link> : null}
+              onChange={(status) => setFilters((current) => ({ ...current, status }))}
+              action={hasActiveFilters ? <button className="cursor-pointer border-b border-[#526f8d73] bg-transparent p-0 text-sm normal-case tracking-normal text-[#526f8d]" type="button" onClick={() => setFilters({ status: "", type: "" })}>Clear filters</button> : null}
               reserveAction
             />
-            <FilterGroup title="Type" name="type" options={typeOptions} activeValue={filters.type} preserveName="status" preserveValue={filters.status} />
+            <FilterGroup title="Type" options={typeOptions} activeValue={filters.type} onChange={(type) => setFilters((current) => ({ ...current, type }))} />
           </div>
         </section>
         <section className="grid gap-3.5">
-          {nominations.length ? nominations.map((nomination) => <NominationCard key={nomination.id} nomination={nomination} user={user} />) : <p className="text-[#6e716b]">No nominations yet.</p>}
+          {filteredNominations.length ? filteredNominations.map((nomination) => <NominationCard key={nomination.id} nomination={nomination} user={user} />) : <p className="text-[#6e716b]">{nominations.length ? "No nominations match those filters." : "No nominations yet."}</p>}
         </section>
       </main>
     </AppShell>
@@ -87,20 +85,16 @@ export default function Home() {
 
 function FilterGroup({
   title,
-  name,
   options,
   activeValue,
-  preserveName,
-  preserveValue,
+  onChange,
   action,
   reserveAction = false,
 }: {
   title: string;
-  name: string;
   options: Array<{ value: string; label: string }>;
   activeValue: string;
-  preserveName: string;
-  preserveValue: string;
+  onChange: (value: string) => void;
   action?: React.ReactNode;
   reserveAction?: boolean;
 }) {
@@ -116,12 +110,15 @@ function FilterGroup({
       </div>
       <div className="flex flex-wrap gap-1.5">
         {options.map((option) => (
-          <Form key={option.value || "all"} method="get" className="m-0">
-            {preserveValue ? <input type="hidden" name={preserveName} value={preserveValue} /> : null}
-            <button className={`min-h-[34px] cursor-pointer rounded-md border px-2.5 py-1.5 capitalize disabled:cursor-not-allowed disabled:opacity-45 ${activeValue === option.value ? "border-[#496d58] bg-[#496d58] text-[#fffaf0]" : "border-transparent bg-white/45 text-[#1f2421] hover:border-[#1f242147]"}`} name={name} value={option.value} aria-pressed={activeValue === option.value}>
-              {option.label}
-            </button>
-          </Form>
+          <button
+            key={option.value || "all"}
+            className={`min-h-[34px] cursor-pointer rounded-md border px-2.5 py-1.5 capitalize disabled:cursor-not-allowed disabled:opacity-45 ${activeValue === option.value ? "border-[#496d58] bg-[#496d58] text-[#fffaf0]" : "border-transparent bg-white/45 text-[#1f2421] hover:border-[#1f242147]"}`}
+            type="button"
+            onClick={() => onChange(option.value)}
+            aria-pressed={activeValue === option.value}
+          >
+            {option.label}
+          </button>
         ))}
       </div>
     </div>
