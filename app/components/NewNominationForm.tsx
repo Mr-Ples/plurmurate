@@ -159,12 +159,22 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
             >
               {selectedImages.map((image, index) => (
                 <div
-                  className={`relative min-h-[132px] overflow-hidden bg-[#ddd4c5] md:min-h-[170px] ${
+                  className={`relative overflow-hidden bg-[#ddd4c5] ${
                     selectedImages.length === 3 && index === 0 ? "row-span-2" : ""
                   } ${index > 0 ? "border-l border-[#1f242129]" : ""} ${index > 1 ? "border-t border-[#1f242129]" : ""}`}
                   key={image.id}
                 >
-                  <img className="h-full max-h-[420px] min-h-[132px] w-full object-cover md:min-h-[170px]" src={image.url} alt={image.file.name} />
+                  <img
+                    className={`w-full object-cover ${
+                      selectedImages.length === 1
+                        ? "max-h-[420px] min-h-[132px] md:min-h-[170px]"
+                        : selectedImages.length === 3 && index === 0
+                          ? "h-[264px] md:h-[340px]"
+                          : "h-[132px] md:h-[170px]"
+                    }`}
+                    src={image.url}
+                    alt={image.file.name}
+                  />
                   <button
                     className="absolute top-2 right-2 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[#0f1419cc] text-white shadow-[0_2px_8px_rgba(0,0,0,0.22)] hover:bg-[#0f1419]"
                     type="button"

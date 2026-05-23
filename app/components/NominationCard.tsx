@@ -73,7 +73,7 @@ export function NominationCard({
         <div className={`relative my-3.5 grid overflow-hidden rounded-md border border-[#1f242129] ${nominationMediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
           {nominationMediaUrls.map((url, index) => (
             <img
-              className={`h-full max-h-[420px] min-h-[150px] w-full object-cover ${nominationMediaUrls.length === 3 && index === 0 ? "row-span-2" : ""} ${index > 0 ? "border-l border-[#1f242129]" : ""} ${index > 1 ? "border-t border-[#1f242129]" : ""}`}
+              className={`w-full object-cover ${nominationMediaUrls.length === 3 && index === 0 ? "row-span-2 h-[300px]" : nominationMediaUrls.length === 1 ? "max-h-[420px] min-h-[150px]" : "h-[150px]"} ${index > 0 ? "border-l border-[#1f242129]" : ""} ${index > 1 ? "border-t border-[#1f242129]" : ""}`}
               src={url}
               alt=""
               key={`${url}-${index}`}
