@@ -20,7 +20,6 @@ export interface Env {
   SESSION_SECRET: string;
   DATABASE_PROVIDER: "sqlite" | "d1";
   STORAGE_PROVIDER: "local-r2" | "r2";
-  PUBLISHING_WORKFLOW?: string;
   X_CLIENT_ID: string;
   X_CLIENT_SECRET: string;
   X_HOST_USER_ID: string;

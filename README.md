@@ -155,7 +155,6 @@ Do not include keys already configured as plain `vars` in `wrangler.jsonc`:
 ```text
 DATABASE_PROVIDER
 STORAGE_PROVIDER
-PUBLISHING_WORKFLOW
 X_HOST_USER_ID
 X_HOST_HANDLE
 ```

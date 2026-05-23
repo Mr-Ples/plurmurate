@@ -54,7 +54,7 @@ function mapNomination(row: any) {
   };
 }
 
-export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; X_HOST_HANDLE?: string; PUBLISHING_WORKFLOW?: string }): Repositories {
+export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; X_HOST_HANDLE?: string }): Repositories {
   const db = drizzle(env.DB);
 
   async function getUserRoles(userId: string) {

@@ -7,7 +7,6 @@ import type { CurrentUser } from "~/repositories/interfaces";
 export function envSettings(context: AppLoadContext): Partial<AppSettings> {
   const env = context.cloudflare.env;
   return {
-    publishingWorkflow: env.PUBLISHING_WORKFLOW === "auto_send_when_qualified" ? "auto_send_when_qualified" : "manual_review_when_qualified",
     hostUserId: env.X_HOST_USER_ID ?? "",
     hostHandle: env.X_HOST_HANDLE ?? "",
   };
