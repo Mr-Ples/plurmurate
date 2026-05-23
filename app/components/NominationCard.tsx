@@ -65,6 +65,12 @@ export function NominationCard({
       {nomination.text ? <p className="relative my-[18px] text-[clamp(1.05rem,2vw,1.45rem)] leading-[1.32]">{nomination.text}</p> : null}
       {nomination.targetTweetUrl ? <span className="relative inline-block border-b border-[#526f8d73] text-[#526f8d]">Target X post {nomination.targetTweetId}</span> : null}
       {nomination.nominationMediaUrl ? <img className="relative my-3.5 block max-h-[420px] w-full rounded-md object-cover" src={nomination.nominationMediaUrl} alt="" /> : null}
+      {nomination.rationale ? (
+        <div className="relative mt-4 rounded-md border border-[#1f242129] bg-white/35 p-3 text-sm leading-snug text-[#526f8d]">
+          <p className="m-0 text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Motivation</p>
+          <p className="mt-1.5 mb-0 text-[#1f2421]">{nomination.rationale}</p>
+        </div>
+      ) : null}
       <div className="relative mt-[18px] flex items-center gap-2">
         {(["A", "B", "U"] as const).map((value) => (
           <Form method="post" action="/nominations/new" key={value} className="m-0" onClick={(event) => event.stopPropagation()}>

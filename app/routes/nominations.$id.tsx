@@ -62,6 +62,12 @@ export default function NominationDetail() {
           <h1 className="relative text-[clamp(1.35rem,3vw,2.25rem)] leading-[1.18] font-medium">{nomination.text ?? nomination.targetTweetUrl}</h1>
           {nomination.targetTweetUrl ? <a className="relative inline-block border-b border-[#526f8d73] text-[#526f8d]" href={nomination.targetTweetUrl}>Target X post {nomination.targetTweetId}</a> : null}
           {nomination.nominationMediaUrl ? <img className="relative my-3.5 block max-h-[420px] w-full rounded-md object-cover" src={nomination.nominationMediaUrl} alt="" /> : null}
+          {nomination.rationale ? (
+            <div className="relative my-4 rounded-md border border-[#1f242129] bg-white/35 p-3 text-sm leading-snug text-[#526f8d]">
+              <p className="m-0 text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Motivation</p>
+              <p className="mt-1.5 mb-0 text-[#1f2421]">{nomination.rationale}</p>
+            </div>
+          ) : null}
           <Form method="post" className="relative flex flex-wrap gap-2.5" title={isCreator && !settings.creatorSelfVoteAllowed ? "You cannot vote on your own nomination." : undefined}>
             <input type="hidden" name="_intent" value="vote" />
             <input type="hidden" name="nominationId" value={nomination.id} />

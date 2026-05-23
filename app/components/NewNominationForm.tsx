@@ -36,6 +36,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
   const mediaTitle = selectedImages.length
     ? `${selectedImages.length} image${selectedImages.length === 1 ? "" : "s"} selected`
     : "Add media";
+  const mediaLimitReached = selectedImages.length >= maxPreviewImages;
 
   useEffect(() => {
     selectedImagesRef.current = selectedImages;
@@ -163,7 +164,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
                   } ${index > 0 ? "border-l border-[#1f242129]" : ""} ${index > 1 ? "border-t border-[#1f242129]" : ""}`}
                   key={image.id}
                 >
-                  <img className="h-full min-h-[132px] w-full object-cover md:min-h-[170px]" src={image.url} alt={image.file.name} />
+                  <img className="h-full max-h-[420px] min-h-[132px] w-full object-cover md:min-h-[170px]" src={image.url} alt={image.file.name} />
                   <button
                     className="absolute top-2 right-2 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[#0f1419cc] text-white shadow-[0_2px_8px_rgba(0,0,0,0.22)] hover:bg-[#0f1419]"
                     type="button"
@@ -179,7 +180,11 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
           ) : null}
           <div className="flex items-center gap-2.5 border-t border-[#1f242129] pt-3">
             {user && !isRepost ? (
-              <label className={iconButtonClass} title={mediaTitle}>
+              <label
+                className={`${iconButtonClass} ${mediaLimitReached ? "cursor-not-allowed opacity-45" : ""}`}
+                title={mediaLimitReached ? "Maximum 4 images" : mediaTitle}
+                aria-disabled={mediaLimitReached}
+              >
                 <Image size={19} aria-hidden="true" />
                 <span className={srOnlyClass}>Add media</span>
                 <input
@@ -188,6 +193,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
                   name="image"
                   type="file"
                   multiple
+                  disabled={mediaLimitReached}
                   accept="image/png,image/jpeg,image/webp"
                   onChange={(event) => handleMediaChange(event.currentTarget.files)}
                 />
