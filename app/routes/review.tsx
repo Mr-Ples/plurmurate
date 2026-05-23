@@ -27,9 +27,9 @@ export default function Review() {
   const { user, nominations } = useLoaderData<typeof loader>();
   return (
     <AppShell user={user}>
-      <main className="feed-layout">
-        <section className="feed-intro"><h1>Publisher review</h1></section>
-        <section className="feed">{nominations.map((nomination) => <NominationCard key={nomination.id} nomination={nomination} user={user} review />)}</section>
+      <main className="grid gap-9 py-[34px] pb-[70px] md:grid-cols-[minmax(180px,280px)_1fr]">
+        <section className="self-start md:sticky md:top-5"><h1 className="mt-0 mb-[18px] font-serif text-[clamp(2rem,5vw,4.8rem)] leading-[0.95] font-medium">Publisher review</h1></section>
+        <section className="grid gap-3.5">{nominations.map((nomination) => <NominationCard key={nomination.id} nomination={nomination} user={user} review />)}</section>
       </main>
     </AppShell>
   );

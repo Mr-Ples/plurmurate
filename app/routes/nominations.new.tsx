@@ -9,6 +9,11 @@ import { storeNominationImage } from "~/services/media-service";
 import { getSettings } from "~/services/settings-service";
 import { voteOnNomination } from "~/services/vote-service";
 
+const buttonClass = "cursor-pointer rounded-md border border-[#1f2421] bg-[#1f2421] px-3.5 py-2.5 text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-45";
+const fieldClass = "rounded-md border border-[#1f242129] bg-white/45 px-3 py-2.5";
+const iconButtonClass = "inline-flex h-[38px] w-[38px] cursor-pointer items-center justify-center rounded-md border border-[#1f242129] text-[#526f8d]";
+const srOnlyClass = "absolute -m-px h-px w-px overflow-hidden whitespace-nowrap border-0 p-0 [clip:rect(0,0,0,0)]";
+
 export async function loader({ request, context }: any) {
   const user = await getCurrentUser(request, context);
   const settings = await getSettings(context);
@@ -47,22 +52,22 @@ export default function NewNomination() {
 
   return (
     <AppShell user={user}>
-      <main className="form-page">
-        <h1>New post</h1>
-        <Form method="post" encType="multipart/form-data" className="editor-form">
-          <section className={`composer ${isRepost ? "is-muted" : ""}`}>
+      <main className="py-[42px] pb-20">
+        <h1 className="mt-0 mb-[18px] font-serif text-[clamp(2rem,5vw,4.8rem)] leading-[0.95] font-medium">New post</h1>
+        <Form method="post" encType="multipart/form-data" className="flex max-w-[720px] flex-col gap-2.5">
+          <section className={`grid grid-cols-[40px_minmax(0,1fr)] gap-3 rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-3 md:grid-cols-[52px_minmax(0,1fr)] md:gap-3.5 md:p-4 ${isRepost ? "pointer-events-none opacity-50" : ""}`}>
             {user?.profileImageUrl ? (
-              <img className="composer-avatar" src={user.profileImageUrl} alt="" />
+              <img className="flex h-10 w-10 items-center justify-center rounded-full bg-[#ddd4c5] object-cover md:h-12 md:w-12" src={user.profileImageUrl} alt="" />
             ) : (
-              <div className="composer-avatar placeholder-avatar" aria-hidden="true">?</div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#1f242129] bg-[#ddd4c5] font-semibold text-[#6e716b] md:h-12 md:w-12" aria-hidden="true">?</div>
             )}
-            <div className="composer-main">
-              <label className="sr-only" htmlFor="nomination-text">Post text</label>
-              <div className="text-composer">
+            <div className="min-w-0">
+              <label className={srOnlyClass} htmlFor="nomination-text">Post text</label>
+              <div className="relative h-[138px] overflow-hidden">
                 {text ? (
-                  <div className="text-highlight" aria-hidden="true" ref={highlightRef}>
+                  <div className="pointer-events-none absolute inset-0 h-[138px] w-full overflow-hidden whitespace-pre-wrap break-words bg-transparent p-0 text-[1.35rem] leading-[1.35] text-[#1f2421]" aria-hidden="true" ref={highlightRef}>
                     <span>{text.slice(0, limit)}</span>
-                    {overLimit ? <mark>{text.slice(limit)}</mark> : null}
+                    {overLimit ? <mark className="bg-red-500/20 text-[#9f1d1d]">{text.slice(limit)}</mark> : null}
                   </div>
                 ) : null}
                 <textarea
@@ -77,15 +82,16 @@ export default function NewNomination() {
                   onScroll={(event) => {
                     if (highlightRef.current) highlightRef.current.scrollTop = event.currentTarget.scrollTop;
                   }}
-                  className={text ? "has-highlight" : ""}
+                  className={`relative z-10 h-[138px] w-full resize-none overflow-y-auto border-0 bg-transparent p-0 text-[1.35rem] leading-[1.35] break-words whitespace-pre-wrap outline-none ${text ? "text-transparent caret-[#1f2421]" : "text-[#1f2421]"}`}
                 />
               </div>
-              <div className="composer-actions">
+              <div className="flex items-center gap-2.5 border-t border-[#1f242129] pt-3">
                 {user && !isRepost ? (
-                  <label className="icon-button" title={fileName || "Add media"}>
+                  <label className={iconButtonClass} title={fileName || "Add media"}>
                     <Image size={19} aria-hidden="true" />
-                    <span className="sr-only">Add media</span>
+                    <span className={srOnlyClass}>Add media</span>
                     <input
+                      className="hidden"
                       name="image"
                       type="file"
                       accept="image/png,image/jpeg,image/webp"
@@ -93,21 +99,22 @@ export default function NewNomination() {
                     />
                   </label>
                 ) : !user ? (
-                  <Link className="icon-button" to="/login" title="Login to add media">
+                  <Link className={iconButtonClass} to="/login" title="Login to add media">
                     <Image size={19} aria-hidden="true" />
-                    <span className="sr-only">Login to add media</span>
+                    <span className={srOnlyClass}>Login to add media</span>
                   </Link>
                 ) : (
-                  <span className="icon-button is-disabled" title="Reposts cannot include media">
+                  <span className={`${iconButtonClass} cursor-not-allowed opacity-55`} title="Reposts cannot include media">
                     <Image size={19} aria-hidden="true" />
-                    <span className="sr-only">Reposts cannot include media</span>
+                    <span className={srOnlyClass}>Reposts cannot include media</span>
                   </span>
                 )}
-                {fileName ? <span className="selected-file">{fileName}</span> : null}
-                <div className={`limit-meter ${overLimit ? "over-limit" : ""}`} aria-label={`${Math.abs(remaining)} characters ${overLimit ? "over" : "remaining"}`}>
-                  <svg viewBox="0 0 36 36" aria-hidden="true">
-                    <circle cx="18" cy="18" r="15" />
+                {fileName ? <span className="max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap text-sm text-[#6e716b] md:max-w-[220px]">{fileName}</span> : null}
+                <div className={`relative ml-auto inline-flex h-[38px] w-[38px] items-center justify-center text-xs ${overLimit ? "text-[#9f1d1d]" : "text-[#6e716b]"}`} aria-label={`${Math.abs(remaining)} characters ${overLimit ? "over" : "remaining"}`}>
+                  <svg className="absolute inset-0 h-[38px] w-[38px] -rotate-90" viewBox="0 0 36 36" aria-hidden="true">
+                    <circle className="fill-none stroke-[#1f242124] stroke-[2.5]" cx="18" cy="18" r="15" />
                     <circle
+                      className={`fill-none stroke-[2.5] ${overLimit ? "stroke-[#9f1d1d]" : "stroke-[#526f8d]"}`}
                       cx="18"
                       cy="18"
                       r="15"
@@ -117,14 +124,15 @@ export default function NewNomination() {
                   </svg>
                   {(overLimit || remaining <= 20) ? <span>{remaining}</span> : null}
                 </div>
-                {user ? <button disabled={overLimit}>Nominate</button> : <Link className="primary-action" to="/login">Login</Link>}
+                {user ? <button className={buttonClass} disabled={overLimit}>Nominate</button> : <Link className={buttonClass} to="/login">Login</Link>}
               </div>
             </div>
           </section>
-          <div className="metadata-row">
-            <label>
+          <div className="grid gap-2.5 md:grid-cols-[minmax(150px,220px)_minmax(0,1fr)]">
+            <label className="grid gap-1.5">
               Type
               <select
+                className={fieldClass}
                 name="type"
                 value={selectedType}
                 onChange={(event) => {
@@ -141,24 +149,26 @@ export default function NewNomination() {
                 ))}
               </select>
             </label>
-            <label>
-              <span className="field-title">
+            <label className="grid gap-1.5">
+              <span className="inline-flex items-center gap-1.5">
                 Target X post URL
-                <span className="info-tip" tabIndex={0} aria-label="For reposts, replies, and quotes a URL is required">
+                <span className="group relative inline-flex h-[22px] w-[22px] items-center justify-center rounded-full border border-[#1f242129] text-[#6e716b]" tabIndex={0} aria-label="For reposts, replies, and quotes a URL is required">
                   <Info size={15} aria-hidden="true" />
+                  <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-30 w-[min(280px,70vw)] -translate-x-1/2 translate-y-1 rounded-md border border-[#1f242129] bg-[#1f2421] px-3 py-2.5 text-sm leading-snug text-[#fffaf0] opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100 group-focus:translate-y-0 group-focus:opacity-100">For reposts, replies, and quotes a URL is required</span>
                 </span>
               </span>
-              <input name="targetTweetUrl" type="url" placeholder="https://x.com/user/status/..." required={needsTargetUrl} />
+              <input className={fieldClass} name="targetTweetUrl" type="url" placeholder="https://x.com/user/status/..." required={needsTargetUrl} />
             </label>
           </div>
-          <label>
-            <span className="field-title">
+          <label className="grid gap-1.5">
+            <span className="inline-flex items-center gap-1.5">
               Motivation (optional)
-              <span className="info-tip" tabIndex={0} aria-label="The motivation will be visible to voters as additional context for the post">
+              <span className="group relative inline-flex h-[22px] w-[22px] items-center justify-center rounded-full border border-[#1f242129] text-[#6e716b]" tabIndex={0} aria-label="The motivation will be visible to voters as additional context for the post">
                 <Info size={15} aria-hidden="true" />
+                <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-30 w-[min(280px,70vw)] -translate-x-1/2 translate-y-1 rounded-md border border-[#1f242129] bg-[#1f2421] px-3 py-2.5 text-sm leading-snug text-[#fffaf0] opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100 group-focus:translate-y-0 group-focus:opacity-100">The motivation will be visible to voters as additional context for the post</span>
               </span>
             </span>
-            <textarea name="rationale" maxLength={500} rows={3} />
+            <textarea className={`${fieldClass} resize-y`} name="rationale" maxLength={500} rows={3} />
           </label>
           {/* <p className="form-note">Tweet avatar mode: {settings.tweetAvatarMode}. Uploads can be attached from the nomination detail screen.</p> */}
         </Form>

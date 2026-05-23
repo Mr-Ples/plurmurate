@@ -13,8 +13,8 @@ export default function Me() {
   const { user, nominations } = useLoaderData<typeof loader>();
   return (
     <AppShell user={user}>
-      <main className="settings-page">
-        <h1>{user ? `@${user.username}` : "Profile"}</h1>
+      <main className="py-[42px] pb-20">
+        <h1 className="mt-0 mb-[18px] font-serif text-[clamp(2rem,5vw,4.8rem)] leading-[0.95] font-medium">{user ? `@${user.username}` : "Profile"}</h1>
         <p>Roles: {user?.roles.join(", ") ?? "none"}</p>
         <p>Visible nominations: {nominations.length}</p>
       </main>

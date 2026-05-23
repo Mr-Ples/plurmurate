@@ -24,20 +24,20 @@ export default function Login() {
 
   return (
     <AppShell user={user}>
-      <main className="login-page">
-        <h1>Sign in with X</h1>
+      <main className="py-[42px] pb-20">
+        <h1 className="mt-0 mb-[18px] font-serif text-[clamp(2rem,5vw,4.8rem)] leading-[0.95] font-medium">Sign in with X</h1>
         <p>Authentication uses live X OAuth 2.0 with PKCE. Configure `.dev.vars.staging` before using it locally.</p>
         {configured ? (
           <a
             aria-disabled={isStartingLogin}
-            className={`primary-action ${isStartingLogin ? "is-disabled" : ""}`}
+            className={`inline-block rounded-md border border-[#1f2421] bg-[#1f2421] px-3.5 py-2.5 text-[#fffaf0] ${isStartingLogin ? "pointer-events-none cursor-wait opacity-70" : "cursor-pointer"}`}
             href="/auth/x/start"
             onClick={startLogin}
           >
             {isStartingLogin ? "Opening X..." : "Continue with X"}
           </a>
         ) : (
-          <p className="empty">X OAuth is not configured yet.</p>
+          <p className="text-[#6e716b]">X OAuth is not configured yet.</p>
         )}
       </main>
     </AppShell>
