@@ -1,3 +1,5 @@
+# Plurmurate
+
 | ![murmurate ghibli](./assets/murmurate-ghibli.png) | ![plurmurate-def](./assets/plurmurate-def.png) |
 | :---: | :---: |
 
@@ -108,7 +110,19 @@ Copy the URL to the production X app configuration **Website URL** and **Callbac
 - Callback URI / Redirect URL: https://example.project.workers.dev/auth/x/callback
 
 
-## Deploy
+# Development
+
+```bash
+npm run dev
+# once its running start a tunnel by tapping t + enter
+```
+
+Copy the URL from the tunnel to the staging X app configuration **Website URL** and **Callback URI / Redirect URL** setting (you need to do this every time you start the local tunnel):
+- Website URL: https://tunnel-url.cloudflare.com
+- Callback URI / Redirect URL: https://tunnel-url.cloudflare.com/auth/x/callback
+
+
+# Deploy
 
 ### Staging (Optional)
 
