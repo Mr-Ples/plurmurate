@@ -43,6 +43,18 @@ export function TargetTweetCard({
           ) : (
             <span className="text-sm text-[#6e716b]">Target X post {fallbackId}</span>
           )}
+          {tweet?.mediaUrls.length ? (
+            <span className={`mt-2 grid overflow-hidden rounded-md border border-[#1f242129] ${tweet.mediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+              {tweet.mediaUrls.slice(0, 4).map((url, index) => (
+                <img
+                  className={`w-full object-cover ${tweet.mediaUrls.length === 1 ? "max-h-[320px] min-h-[130px]" : "h-[130px]"} ${index > 0 ? "border-l border-[#1f242129]" : ""} ${index > 1 ? "border-t border-[#1f242129]" : ""}`}
+                  src={url}
+                  alt=""
+                  key={`${url}-${index}`}
+                />
+              ))}
+            </span>
+          ) : null}
         </span>
       </div>
     </a>

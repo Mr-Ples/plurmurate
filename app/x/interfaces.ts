@@ -14,6 +14,7 @@ export interface XTweet {
   authorName?: string | null;
   authorProfileImageUrl?: string | null;
   createdAt?: string | null;
+  mediaUrls?: string[];
 }
 
 export interface UploadMediaInput {

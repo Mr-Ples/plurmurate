@@ -83,13 +83,19 @@ export class LiveXClient implements XClient {
 
   async getTweetById(tweetId: string, accessToken: string) {
     const url = new URL(`https://api.x.com/2/tweets/${tweetId}`);
-    url.searchParams.set("tweet.fields", "author_id,created_at");
-    url.searchParams.set("expansions", "author_id");
+    url.searchParams.set("tweet.fields", "attachments,author_id,created_at");
+    url.searchParams.set("expansions", "attachments.media_keys,author_id");
+    url.searchParams.set("media.fields", "preview_image_url,type,url");
     url.searchParams.set("user.fields", "profile_image_url,verified");
-    const data = await this.request<{ data: any; includes?: { users?: any[] } }>(url.toString(), {
+    const data = await this.request<{ data: any; includes?: { media?: any[]; users?: any[] } }>(url.toString(), {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     const author = data.includes?.users?.find((user) => user.id === data.data.author_id);
+    const mediaKeys = data.data.attachments?.media_keys ?? [];
+    const mediaUrls = mediaKeys
+      .map((key: string) => data.includes?.media?.find((media) => media.media_key === key))
+      .map((media: any) => media?.url ?? media?.preview_image_url)
+      .filter((value: unknown): value is string => typeof value === "string" && value.length > 0);
     return {
       id: data.data.id,
       text: data.data.text,
@@ -98,6 +104,7 @@ export class LiveXClient implements XClient {
       authorName: author?.name ?? null,
       authorProfileImageUrl: author?.profile_image_url ?? null,
       createdAt: data.data.created_at ?? null,
+      mediaUrls,
     };
   }
 

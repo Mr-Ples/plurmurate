@@ -10,6 +10,7 @@ import { getRepositories } from "~/repositories/drizzle/repositories";
 import { voteOnNomination } from "~/services/vote-service";
 import { createNomination } from "~/services/nomination-service";
 import { storeNominationImage } from "~/services/media-service";
+import { hydrateMissingTargetTweets } from "~/services/external-tweet-service";
 
 export async function loader({ request, context }: any) {
   const user = await getCurrentUser(request, context);
@@ -17,6 +18,14 @@ export async function loader({ request, context }: any) {
   const settings = await getSettings(context);
   const users = await repos.users.listUsers();
   const host = users.find((candidate) => candidate.xUserId === settings.hostUserId || candidate.username?.toLowerCase() === settings.hostHandle.toLowerCase()) ?? null;
+  let nominations = await repos.nominations.listFeed({
+    viewerUserId: user?.id,
+  });
+  if (await hydrateMissingTargetTweets(context, nominations)) {
+    nominations = await repos.nominations.listFeed({
+      viewerUserId: user?.id,
+    });
+  }
   return {
     user,
     settings,
@@ -27,9 +36,7 @@ export async function loader({ request, context }: any) {
         displayName: host?.displayName ?? null,
       }
       : null,
-    nominations: await repos.nominations.listFeed({
-      viewerUserId: user?.id,
-    }),
+    nominations,
   };
 }
 

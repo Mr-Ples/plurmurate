@@ -5,6 +5,7 @@ import { TargetTweetCard } from "~/components/TargetTweetCard";
 import { nominationTypeLabel } from "~/domain/nominations";
 import { getCurrentUser } from "~/lib/auth/session";
 import { getRepositories } from "~/repositories/drizzle/repositories";
+import { hydrateMissingTargetTweets } from "~/services/external-tweet-service";
 import { getSettings } from "~/services/settings-service";
 import { voteOnNomination } from "~/services/vote-service";
 
@@ -16,9 +17,14 @@ const activeVoteClass = "border-[#496d58] bg-[#496d58] text-[#fffaf0] hover:bg-[
 export async function loader({ request, context, params }: any) {
   const user = await getCurrentUser(request, context);
   const repos = getRepositories(context.cloudflare.env);
-  const nominations = await repos.nominations.listFeed({ viewerUserId: user?.id });
-  const nomination = nominations.find((item) => item.id === params.id);
+  let nominations = await repos.nominations.listFeed({ viewerUserId: user?.id });
+  let nomination = nominations.find((item) => item.id === params.id);
   if (!nomination) throw new Response("Not found", { status: 404 });
+  if (await hydrateMissingTargetTweets(context, [nomination])) {
+    nominations = await repos.nominations.listFeed({ viewerUserId: user?.id });
+    nomination = nominations.find((item) => item.id === params.id);
+    if (!nomination) throw new Response("Not found", { status: 404 });
+  }
   return { user, settings: await getSettings(context), nomination, comments: await repos.votes.listComments(params.id) };
 }
 

@@ -1,4 +1,5 @@
 import type { AppLoadContext } from "react-router";
+import type { FeedNomination } from "~/domain/nominations";
 import { getRepositories } from "~/repositories/drizzle/repositories";
 import { LiveXClient } from "~/x/live-x-client";
 import { getPublishingAccessToken } from "./publishing-service";
@@ -28,6 +29,7 @@ export async function fetchAndCacheExternalTweet(context: AppLoadContext, tweetI
       authorProfileImageUrl: tweet.authorProfileImageUrl,
       authorId: tweet.authorId,
       textPreview: tweet.text,
+      mediaUrls: tweet.mediaUrls,
       fetchStatus: "ok",
       rawJson: tweet,
     });
@@ -40,4 +42,15 @@ export async function fetchAndCacheExternalTweet(context: AppLoadContext, tweetI
     });
     return null;
   }
+}
+
+export async function hydrateMissingTargetTweets(context: AppLoadContext, nominations: FeedNomination[]) {
+  const missingTargets = nominations
+    .filter((nomination) => nomination.targetTweetId && nomination.targetTweetUrl && !nomination.targetTweet)
+    .map((nomination) => ({ tweetId: nomination.targetTweetId as string, url: nomination.targetTweetUrl as string }));
+  const uniqueTargets = [...new Map(missingTargets.map((target) => [target.tweetId, target])).values()].slice(0, 8);
+  if (!uniqueTargets.length) return false;
+
+  const results = await Promise.all(uniqueTargets.map((target) => fetchAndCacheExternalTweet(context, target.tweetId, target.url)));
+  return results.some(Boolean);
 }
