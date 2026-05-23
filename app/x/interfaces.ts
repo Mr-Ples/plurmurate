@@ -34,6 +34,7 @@ export interface RepostInput {
 
 export interface XClient {
   exchangeCode(input: { code: string; codeVerifier: string; redirectUri: string }): Promise<{ accessToken: string; refreshToken?: string }>;
+  refreshAccessToken(refreshToken: string): Promise<{ accessToken: string; refreshToken?: string }>;
   getAuthenticatedUser(accessToken: string): Promise<XUser>;
   getUserById(userId: string, accessToken: string): Promise<XUser>;
   getTweetById(tweetId: string, accessToken: string): Promise<XTweet>;

@@ -65,6 +65,25 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
       .where(eq(userRoles.userId, userId));
   }
 
+  async function getVoteSummary(nominationId: string): Promise<VoteSummary> {
+    const rows = await db.select({ value: votes.value, count: sql<number>`count(*)` }).from(votes).where(eq(votes.nominationId, nominationId)).groupBy(votes.value).all();
+    const counts = { A: 0, B: 0, U: 0 };
+    for (const row of rows) counts[row.value as VoteValue] = Number(row.count);
+    const positive = counts.A + counts.B;
+    const negative = counts.U;
+    const total = positive + negative;
+    return {
+      a: counts.A,
+      b: counts.B,
+      u: counts.U,
+      positive,
+      negative,
+      total,
+      positiveRatio: total === 0 ? 0 : positive / total,
+      positiveMargin: positive - negative,
+    };
+  }
+
   return {
     users: {
       async upsertFromX(input) {
@@ -77,8 +96,8 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
           displayName: input.displayName ?? null,
           profileImageUrl: input.profileImageUrl ?? null,
           followersCount: input.followersCount ?? 0,
-          xAccessTokenEncrypted: input.accessTokenEncrypted ?? null,
-          xRefreshTokenEncrypted: input.refreshTokenEncrypted ?? null,
+          xAccessTokenEncrypted: input.accessTokenEncrypted !== undefined ? input.accessTokenEncrypted : existing?.xAccessTokenEncrypted ?? null,
+          xRefreshTokenEncrypted: input.refreshTokenEncrypted !== undefined ? input.refreshTokenEncrypted : existing?.xRefreshTokenEncrypted ?? null,
           lastProfileSyncAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
@@ -93,6 +112,27 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
       async listUsers() {
         const rows = await db.select().from(users).orderBy(desc(users.createdAt)).all();
         return Promise.all(rows.map(async (row) => toCurrentUser(row, await getUserRoles(row.id))));
+      },
+      async findPublishingCredentialsByXUserId(xUserId) {
+        const row = await db.select().from(users).where(eq(users.xUserId, xUserId)).get();
+        if (!row) return null;
+        return {
+          userId: row.id,
+          xUserId: row.xUserId,
+          accessTokenEncrypted: row.xAccessTokenEncrypted,
+          refreshTokenEncrypted: row.xRefreshTokenEncrypted,
+        };
+      },
+      async updateTokens(input) {
+        await db
+          .update(users)
+          .set({
+            xAccessTokenEncrypted: input.accessTokenEncrypted,
+            xRefreshTokenEncrypted: input.refreshTokenEncrypted,
+            updatedAt: new Date().toISOString(),
+          })
+          .where(eq(users.id, input.userId))
+          .run();
       },
     },
     sessions: {
@@ -188,7 +228,7 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
           .all();
         return Promise.all(
           rows.map(async (row) => {
-            const summary = await this.votes.getVoteSummary(row.nomination.id);
+            const summary = await getVoteSummary(row.nomination.id);
             const userVote = filter.viewerUserId
               ? await db
                   .select({ value: votes.value })
@@ -258,22 +298,7 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
           .run();
       },
       async getVoteSummary(nominationId): Promise<VoteSummary> {
-        const rows = await db.select({ value: votes.value, count: sql<number>`count(*)` }).from(votes).where(eq(votes.nominationId, nominationId)).groupBy(votes.value).all();
-        const counts = { A: 0, B: 0, U: 0 };
-        for (const row of rows) counts[row.value as VoteValue] = Number(row.count);
-        const positive = counts.A + counts.B;
-        const negative = counts.U;
-        const total = positive + negative;
-        return {
-          a: counts.A,
-          b: counts.B,
-          u: counts.U,
-          positive,
-          negative,
-          total,
-          positiveRatio: total === 0 ? 0 : positive / total,
-          positiveMargin: positive - negative,
-        };
+        return getVoteSummary(nominationId);
       },
       async listComments(nominationId) {
         return db

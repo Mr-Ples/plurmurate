@@ -103,7 +103,6 @@ Exact route file names can follow the scaffolded React Router convention.
 Required environment/bindings:
 
 ```text
-APP_BASE_URL
 SESSION_SECRET
 DATABASE_PROVIDER=sqlite|d1
 STORAGE_PROVIDER=local-r2|r2

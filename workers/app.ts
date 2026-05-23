@@ -17,7 +17,6 @@ declare module "react-router" {
 }
 
 export interface Env {
-  APP_BASE_URL: string;
   SESSION_SECRET: string;
   DATABASE_PROVIDER: "sqlite" | "d1";
   STORAGE_PROVIDER: "local-r2" | "r2";
@@ -26,8 +25,7 @@ export interface Env {
   X_CLIENT_SECRET: string;
   X_HOST_USER_ID: string;
   X_HOST_HANDLE: string;
-  X_PUBLISHING_ACCESS_TOKEN: string;
-  X_PUBLISHING_REFRESH_TOKEN: string;
+  X_PUBLISHING_ACCESS_TOKEN?: string;
   DB: D1Database;
   MEDIA_BUCKET: R2Bucket;
 }

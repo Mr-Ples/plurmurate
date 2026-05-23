@@ -116,10 +116,9 @@ This app asks X for these login permissions:
 users.read tweet.read tweet.write media.write offline.access follows.read
 ```
 
-Set `.env` to use the same jprq URL:
+Set `.env` for local runtime settings and secrets:
 
 ```env
-APP_BASE_URL=https://plurmurate.mr-ples.jprq
 SESSION_SECRET=replace-with-at-least-32-random-characters
 DATABASE_PROVIDER=sqlite
 STORAGE_PROVIDER=local-r2
@@ -151,10 +150,9 @@ jprq http 5173 -s plurmurate
 
 ## Cloudflare deployment
 
-For Cloudflare later, use the deployed app URL directly and create a separate X developer app for production:
+For Cloudflare later, create a separate X developer app for production:
 
 ```env
-APP_BASE_URL=https://your-cloudflare-app-url
 SESSION_SECRET=replace-with-at-least-32-random-characters
 DATABASE_PROVIDER=d1
 STORAGE_PROVIDER=r2
@@ -178,11 +176,10 @@ Copy the D1 `database_id` from the `wrangler d1 create` output into `wrangler.js
 00000000-0000-0000-0000-000000000000
 ```
 
-In `wrangler.jsonc`, set the deployed runtime vars to the Cloudflare app URL:
+In `wrangler.jsonc`, set the deployed runtime vars:
 
 ```jsonc
 "vars": {
-  "APP_BASE_URL": "https://your-cloudflare-app-url",
   "DATABASE_PROVIDER": "d1",
   "STORAGE_PROVIDER": "r2",
   "PUBLISHING_WORKFLOW": "manual_review_when_qualified",

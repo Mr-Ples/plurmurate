@@ -13,6 +13,13 @@ export interface CurrentUser {
   roles: RoleName[];
 }
 
+export interface PublishingCredentials {
+  userId: string;
+  xUserId: string;
+  accessTokenEncrypted: string | null;
+  refreshTokenEncrypted: string | null;
+}
+
 export interface UserRepository {
   upsertFromX(input: {
     xUserId: string;
@@ -24,6 +31,12 @@ export interface UserRepository {
     refreshTokenEncrypted?: string | null;
   }): Promise<CurrentUser>;
   listUsers(): Promise<CurrentUser[]>;
+  findPublishingCredentialsByXUserId(xUserId: string): Promise<PublishingCredentials | null>;
+  updateTokens(input: {
+    userId: string;
+    accessTokenEncrypted: string | null;
+    refreshTokenEncrypted: string | null;
+  }): Promise<void>;
 }
 
 export interface SessionRepository {

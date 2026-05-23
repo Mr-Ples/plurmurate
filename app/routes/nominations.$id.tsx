@@ -26,7 +26,7 @@ export async function action({ request, context, params }: any) {
     const file = formData.get("image");
     const kind = formData.get("kind") === "tweet_avatar" ? "tweet_avatar" : "nomination_image";
     if (!(file instanceof File) || file.size === 0) throw new Response("Image is required", { status: 400 });
-    await storeNominationImage(context, user, params.id, file, kind);
+    await storeNominationImage(context, user, params.id, file, kind, new URL(request.url).origin);
   }
   return redirect(`/nominations/${params.id}`);
 }

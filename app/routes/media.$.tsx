@@ -4,7 +4,7 @@ import { R2ObjectStorage } from "~/storage/r2-storage";
 export async function loader({ params, context }: any) {
   const key = params["*"];
   if (!key) throw new Response("Not found", { status: 404 });
-  const storage = new R2ObjectStorage(context.cloudflare.env.MEDIA_BUCKET, context.cloudflare.env.APP_BASE_URL);
+  const storage = new R2ObjectStorage(context.cloudflare.env.MEDIA_BUCKET);
   const body = await storage.get(key);
   if (!body) throw new Response("Not found", { status: 404 });
   const repos = getRepositories(context.cloudflare.env);

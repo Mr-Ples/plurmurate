@@ -35,6 +35,24 @@ export class LiveXClient implements XClient {
     return { accessToken: data.access_token, refreshToken: data.refresh_token };
   }
 
+  async refreshAccessToken(refreshToken: string) {
+    const body = new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+      client_id: this.clientId,
+    });
+    const token = btoa(`${this.clientId}:${this.clientSecret}`);
+    const data = await this.request<{ access_token: string; refresh_token?: string }>("https://api.x.com/2/oauth2/token", {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${token}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
+    });
+    return { accessToken: data.access_token, refreshToken: data.refresh_token };
+  }
+
   async getAuthenticatedUser(accessToken: string) {
     const data = await this.request<{ data: any }>(
       "https://api.x.com/2/users/me?user.fields=public_metrics,profile_image_url,verified,created_at",

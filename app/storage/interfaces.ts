@@ -2,6 +2,7 @@ export interface PutObjectInput {
   key: string;
   body: ArrayBuffer | ReadableStream;
   contentType: string;
+  publicBaseUrl: string;
 }
 
 export interface StoredObject {

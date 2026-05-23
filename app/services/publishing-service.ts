@@ -1,9 +1,35 @@
 import type { AppLoadContext } from "react-router";
+import { openSecret, sealSecret } from "~/lib/auth/crypto";
 import { requirePermission } from "~/lib/permissions/permissions";
 import { getRepositories } from "~/repositories/drizzle/repositories";
 import type { CurrentUser } from "~/repositories/interfaces";
 import { LiveXClient } from "~/x/live-x-client";
 import { getSettings } from "./settings-service";
+
+async function getPublishingAccessToken(context: AppLoadContext, hostUserId: string, client: LiveXClient) {
+  const env = context.cloudflare.env;
+  const repos = getRepositories(env);
+  const credentials = await repos.users.findPublishingCredentialsByXUserId(hostUserId);
+  const refreshToken = await openSecret(credentials?.refreshTokenEncrypted ?? null, env.SESSION_SECRET);
+  const storedAccessToken = await openSecret(credentials?.accessTokenEncrypted ?? null, env.SESSION_SECRET);
+  if (credentials && refreshToken) {
+    try {
+      const refreshed = await client.refreshAccessToken(refreshToken);
+      await repos.users.updateTokens({
+        userId: credentials.userId,
+        accessTokenEncrypted: await sealSecret(refreshed.accessToken, env.SESSION_SECRET),
+        refreshTokenEncrypted: await sealSecret(refreshed.refreshToken ?? refreshToken, env.SESSION_SECRET),
+      });
+      return refreshed.accessToken;
+    } catch (error) {
+      if (!storedAccessToken) throw error;
+    }
+  }
+
+  if (storedAccessToken) return storedAccessToken;
+
+  return env.X_PUBLISHING_ACCESS_TOKEN || null;
+}
 
 export async function sendQualifiedNomination(context: AppLoadContext, nominationId: string, actor: CurrentUser | null) {
   if (actor) requirePermission(actor.roles, "nomination:send");
@@ -13,14 +39,16 @@ export async function sendQualifiedNomination(context: AppLoadContext, nominatio
   if (!nomination) throw new Response("Not found", { status: 404 });
   if (!["qualified", "approved", "failed"].includes(nomination.status)) throw new Response("Nomination is not sendable", { status: 400 });
   const settings = await getSettings(context);
-  const accessToken = env.X_PUBLISHING_ACCESS_TOKEN;
-  if (!accessToken || !env.X_HOST_USER_ID) throw new Error("Publishing credentials are not configured");
+  const hostUserId = settings.hostUserId || env.X_HOST_USER_ID;
+  if (!hostUserId) throw new Error("Publishing host user ID is not configured");
   const client = new LiveXClient(env.X_CLIENT_ID, env.X_CLIENT_SECRET);
+  const accessToken = await getPublishingAccessToken(context, hostUserId, client);
+  if (!accessToken) throw new Error("Publishing credentials are not configured. Log in as the host account or set X_PUBLISHING_ACCESS_TOKEN.");
   const request = {
     type: nomination.type,
     text: nomination.text,
     targetTweetId: nomination.targetTweetId,
-    hostUserId: settings.hostUserId || env.X_HOST_USER_ID,
+    hostUserId,
   };
   try {
     let response: { tweetId: string; url?: string };
