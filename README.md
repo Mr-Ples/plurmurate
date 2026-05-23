@@ -136,7 +136,6 @@ npx wrangler secret bulk .dev.vars.staging --env staging
 
 ```bash
 npm run db:migrate:staging:remote
-npm run build:staging
 npm run deploy:staging
 ```
 
@@ -146,7 +145,6 @@ Apply production migrations and deploy:
 
 ```bash
 npm run db:migrate:production:remote
-npm run build:production
 npm run deploy:production
 ```
 
