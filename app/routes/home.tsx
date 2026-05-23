@@ -94,7 +94,7 @@ export default function Home() {
   const hasActiveFilters = Boolean(filters.status || filters.type || filters.search || filters.sort !== "newest");
   return (
     <AppShell user={user}>
-      <main className="grid gap-9 py-[34px] pb-[70px] md:grid-cols-[minmax(180px,280px)_1fr]">
+      <main className="mx-auto grid w-full max-w-[1010px] gap-9 py-[34px] pb-[70px] md:grid-cols-[minmax(180px,250px)_minmax(0,680px)]">
         <section className="self-start md:sticky md:top-5">
           {host ? (
             <a className="mb-4 grid grid-cols-[46px_minmax(0,1fr)] items-center gap-3 rounded-lg border border-[#1f242129] bg-[#fffcf49e] p-3 hover:border-[#1f24214d] hover:bg-[#fffcf4d1]" href={`https://x.com/${host.handle}`} target="_blank" rel="noreferrer">
