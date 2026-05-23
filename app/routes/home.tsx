@@ -112,7 +112,10 @@ export default function Home() {
               <input
                 className="min-h-[38px] rounded-md border border-[#1f242129] bg-white/45 px-3 py-2 outline-none focus:border-[#526f8d]"
                 value={filters.search}
-                onChange={(event) => setFilters((current) => ({ ...current, search: event.currentTarget.value }))}
+                onChange={(event) => {
+                  const search = event.currentTarget.value;
+                  setFilters((current) => ({ ...current, search }));
+                }}
                 placeholder="Search feed"
                 type="search"
               />
@@ -131,7 +134,10 @@ export default function Home() {
               <select
                 className="min-h-[38px] rounded-md border border-[#1f242129] bg-white/45 px-3 py-2 outline-none focus:border-[#526f8d]"
                 value={filters.sort}
-                onChange={(event) => setFilters((current) => ({ ...current, sort: event.currentTarget.value }))}
+                onChange={(event) => {
+                  const sort = event.currentTarget.value;
+                  setFilters((current) => ({ ...current, sort }));
+                }}
               >
                 {sortOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
