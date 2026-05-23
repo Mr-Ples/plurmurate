@@ -9,8 +9,9 @@ function oauthCookie(request: Request) {
   const cookie = request.headers.get("Cookie") ?? "";
   const value = cookie.split(";").map((part) => part.trim()).find((part) => part.startsWith("plurmurate_oauth="))?.split("=")[1];
   if (!value) return null;
-  const [state, verifier] = value.split(".");
-  return { state, verifier };
+  const [state, verifier, ...redirectUriParts] = value.split(".");
+  if (!state || !verifier || redirectUriParts.length === 0) return null;
+  return { state, verifier, redirectUri: decodeURIComponent(redirectUriParts.join(".")) };
 }
 
 export async function loader({ request, context }: any) {
@@ -21,7 +22,7 @@ export async function loader({ request, context }: any) {
   const cookie = oauthCookie(request);
   if (!code || !state || !cookie || cookie.state !== state) throw new Response("Invalid OAuth callback", { status: 400 });
   const client = new LiveXClient(env.X_CLIENT_ID, env.X_CLIENT_SECRET);
-  const token = await client.exchangeCode({ code, codeVerifier: cookie.verifier, redirectUri: env.X_REDIRECT_URI });
+  const token = await client.exchangeCode({ code, codeVerifier: cookie.verifier, redirectUri: cookie.redirectUri });
   const profile = await client.getAuthenticatedUser(token.accessToken);
   const repos = getRepositories(env);
   await repos.roles.ensureSeedRoles();

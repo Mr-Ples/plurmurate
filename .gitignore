@@ -1,2 +1,6 @@
 temp.md
 .env
+node_modules
+.react-router
+.wrangler
+build
