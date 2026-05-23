@@ -4,11 +4,13 @@ import { AppShell } from "~/components/AppShell";
 import { nominationTypeLabel } from "~/domain/nominations";
 import { getCurrentUser } from "~/lib/auth/session";
 import { getRepositories } from "~/repositories/drizzle/repositories";
-import { storeNominationImage } from "~/services/media-service";
+import { getSettings } from "~/services/settings-service";
 import { voteOnNomination } from "~/services/vote-service";
 
 const buttonClass = "cursor-pointer rounded-md border border-[#1f2421] bg-[#1f2421] px-3.5 py-2.5 text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-45";
 const fieldClass = "rounded-md border border-[#1f242129] bg-white/45 px-3 py-2.5";
+const voteClass = "inline-flex h-10 min-w-[62px] cursor-pointer items-center justify-center gap-1.5 border border-[#1f242129] bg-white/45 px-3 text-sm font-medium text-[#1f2421] first:rounded-l-md last:rounded-r-md hover:bg-[#fffcf4] disabled:cursor-not-allowed disabled:opacity-45";
+const activeVoteClass = "border-[#496d58] bg-[#496d58] text-[#fffaf0] hover:bg-[#496d58]";
 
 export async function loader({ request, context, params }: any) {
   const user = await getCurrentUser(request, context);
@@ -16,7 +18,7 @@ export async function loader({ request, context, params }: any) {
   const nominations = await repos.nominations.listFeed({ viewerUserId: user?.id });
   const nomination = nominations.find((item) => item.id === params.id);
   if (!nomination) throw new Response("Not found", { status: 404 });
-  return { user, nomination, comments: await repos.votes.listComments(params.id) };
+  return { user, settings: await getSettings(context), nomination, comments: await repos.votes.listComments(params.id) };
 }
 
 export async function action({ request, context, params }: any) {
@@ -27,19 +29,15 @@ export async function action({ request, context, params }: any) {
   if (intent === "vote") {
     await voteOnNomination(context, user, formData);
   }
-  if (intent === "upload") {
-    const file = formData.get("image");
-    const kind = formData.get("kind") === "tweet_avatar" ? "tweet_avatar" : "nomination_image";
-    if (!(file instanceof File) || file.size === 0) throw new Response("Image is required", { status: 400 });
-    await storeNominationImage(context, user, params.id, file, kind, new URL(request.url).origin);
-  }
   return redirect(`/nominations/${params.id}`);
 }
 
 export default function NominationDetail() {
-  const { user, nomination, comments } = useLoaderData<typeof loader>();
+  const { user, settings, nomination, comments } = useLoaderData<typeof loader>();
   const location = useLocation();
   const navigate = useNavigate();
+  const isCreator = Boolean(user && nomination.creatorUserId === user.id);
+  const canVote = user?.roles.some((role) => ["voter", "publisher", "host", "admin"].includes(role)) && nomination.status === "pending" && (!isCreator || settings.creatorSelfVoteAllowed);
   const from = (location.state as { from?: string } | null)?.from;
   const backTo = from?.startsWith("/") ? from : "/";
   const backClass = "inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-md border border-[#1f242129] bg-white/35 px-3 py-2 text-[#1f2421] hover:border-[#1f24214d] hover:bg-[#fffcf4d1]";
@@ -61,28 +59,21 @@ export default function NominationDetail() {
         <article className="relative overflow-hidden rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-[18px] shadow-[0_12px_30px_rgba(31,36,33,0.06)]">
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(82,111,141,0.12),transparent_50%),linear-gradient(45deg,transparent,rgba(140,91,74,0.08))]" />
           <p className="relative m-0 text-xs uppercase tracking-[0.08em] text-[#6e716b]">{nominationTypeLabel(nomination.type)} / {nomination.status}</p>
-          <h1 className="relative font-serif text-[clamp(2rem,6vw,5rem)] leading-[0.98] font-medium">{nomination.text ?? nomination.targetTweetUrl}</h1>
+          <h1 className="relative text-[clamp(1.35rem,3vw,2.25rem)] leading-[1.18] font-medium">{nomination.text ?? nomination.targetTweetUrl}</h1>
           {nomination.targetTweetUrl ? <a className="relative inline-block border-b border-[#526f8d73] text-[#526f8d]" href={nomination.targetTweetUrl}>Target X post {nomination.targetTweetId}</a> : null}
           {nomination.nominationMediaUrl ? <img className="relative my-3.5 block max-h-[420px] w-full rounded-md object-cover" src={nomination.nominationMediaUrl} alt="" /> : null}
-          <Form method="post" className="relative flex flex-wrap gap-2.5">
+          <Form method="post" className="relative flex flex-wrap gap-2.5" title={isCreator && !settings.creatorSelfVoteAllowed ? "You cannot vote on your own nomination." : undefined}>
             <input type="hidden" name="_intent" value="vote" />
             <input type="hidden" name="nominationId" value={nomination.id} />
-            <select className={fieldClass} name="value" defaultValue={nomination.userVote ?? "A"}>
-              <option>A</option>
-              <option>B</option>
-              <option>U</option>
-            </select>
-            <input className={fieldClass} name="comment" maxLength={400} placeholder="Optional vote comment" />
-            <button className={buttonClass}>Vote</button>
-          </Form>
-          <Form method="post" encType="multipart/form-data" className="relative mt-2.5 flex flex-wrap gap-2.5">
-            <input type="hidden" name="_intent" value="upload" />
-            <select className={fieldClass} name="kind">
-              <option value="nomination_image">Nomination image</option>
-              <option value="tweet_avatar">Tweet avatar</option>
-            </select>
-            <input className={fieldClass} name="image" type="file" accept="image/png,image/jpeg,image/webp" />
-            <button className={buttonClass}>Upload</button>
+            <div className="inline-flex">
+              {(["A", "B", "U"] as const).map((value) => (
+                <button key={value} className={`${voteClass} ${nomination.userVote === value ? activeVoteClass : ""}`} name="value" value={value} disabled={!canVote} type="submit">
+                  <span>{value}</span>
+                  <strong>{value === "A" ? nomination.voteA : value === "B" ? nomination.voteB : nomination.voteU}</strong>
+                </button>
+              ))}
+            </div>
+            <input className={fieldClass} name="comment" maxLength={400} placeholder="Optional vote comment" disabled={!canVote} />
           </Form>
         </article>
         <section className="overflow-auto rounded-lg border border-[#1f242129] bg-[#fffcf4ad] p-4">

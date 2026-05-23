@@ -14,7 +14,8 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
   const [selectedType, setSelectedType] = useState<NominationType>(settings.enabledNominationTypes[0] ?? "original");
   const [text, setText] = useState("");
   const [fileName, setFileName] = useState("");
-  const highlightRef = useRef<HTMLDivElement>(null);
+  const [posting, setPosting] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const limit = 280;
   const count = text.length;
   const overLimit = count > limit;
@@ -24,8 +25,28 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
   const isRepost = selectedType === "repost";
 
   return (
-    <Form id="new-post" method="post" encType="multipart/form-data" className="flex flex-col gap-2.5">
+    <Form
+      id="new-post"
+      method="post"
+      encType="multipart/form-data"
+      className="relative flex flex-col gap-2.5"
+      ref={formRef}
+      onSubmit={() => {
+        setPosting(true);
+        window.setTimeout(() => setPosting(false), 1800);
+        window.setTimeout(() => {
+          setText("");
+          setFileName("");
+          formRef.current?.reset();
+        }, 0);
+      }}
+    >
       <input type="hidden" name="_intent" value="create" />
+      {posting ? (
+        <div className="absolute inset-0 z-30 grid place-items-center rounded-lg bg-[#fffcf4cc] backdrop-blur-[2px]" aria-live="polite" aria-label="Posting">
+          <span className="h-8 w-8 animate-spin rounded-full border-2 border-[#1f242129] border-t-[#1f2421]" />
+        </div>
+      ) : null}
       <section className={`grid grid-cols-[40px_minmax(0,1fr)] gap-3 rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-3 md:grid-cols-[52px_minmax(0,1fr)] md:gap-3.5 md:p-4 ${isRepost ? "pointer-events-none opacity-50" : ""}`}>
         {user?.profileImageUrl ? (
           <img className="flex h-10 w-10 items-center justify-center rounded-full bg-[#ddd4c5] object-cover md:h-12 md:w-12" src={user.profileImageUrl} alt="" />
@@ -34,28 +55,17 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
         )}
         <div className="min-w-0">
           <label className={srOnlyClass} htmlFor="nomination-text">Post text</label>
-          <div className="relative h-[138px] overflow-hidden">
-            {text ? (
-              <div className="pointer-events-none absolute inset-0 h-[138px] w-full overflow-hidden whitespace-pre-wrap break-words bg-transparent p-0 text-[1.35rem] leading-[1.35] text-[#1f2421]" aria-hidden="true" ref={highlightRef}>
-                <span>{text.slice(0, limit)}</span>
-                {overLimit ? <mark className="bg-red-500/20 text-[#9f1d1d]">{text.slice(limit)}</mark> : null}
-              </div>
-            ) : null}
-            <textarea
-              id="nomination-text"
-              name="text"
-              rows={5}
-              placeholder="What's happening?"
-              value={text}
-              disabled={isRepost}
-              required={!isRepost}
-              onChange={(event) => setText(event.currentTarget.value)}
-              onScroll={(event) => {
-                if (highlightRef.current) highlightRef.current.scrollTop = event.currentTarget.scrollTop;
-              }}
-              className={`relative z-10 h-[138px] w-full resize-none overflow-y-auto border-0 bg-transparent p-0 text-[1.35rem] leading-[1.35] break-words whitespace-pre-wrap outline-none ${text ? "text-transparent caret-[#1f2421]" : "text-[#1f2421]"}`}
-            />
-          </div>
+          <textarea
+            id="nomination-text"
+            name="text"
+            rows={5}
+            placeholder="What's happening?"
+            value={text}
+            disabled={isRepost}
+            required={!isRepost}
+            onChange={(event) => setText(event.currentTarget.value)}
+            className="h-[138px] w-full resize-none overflow-y-auto border-0 bg-transparent p-0 text-[1.18rem] leading-[1.4] text-[#1f2421] outline-none placeholder:text-[#6e716b]"
+          />
           <div className="flex items-center gap-2.5 border-t border-[#1f242129] pt-3">
             {user && !isRepost ? (
               <label className={iconButtonClass} title={fileName || "Add media"}>
@@ -95,7 +105,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
               </svg>
               {overLimit || remaining <= 20 ? <span>{remaining}</span> : null}
             </div>
-            {user ? <button className={buttonClass} disabled={overLimit}>Nominate</button> : <Link className={buttonClass} to="/login">Login</Link>}
+            {user ? <button className={buttonClass} disabled={overLimit}>Post</button> : <Link className={buttonClass} to="/login">Login</Link>}
           </div>
         </div>
       </section>
