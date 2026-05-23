@@ -1,5 +1,13 @@
 temp.md
 .env
+.env.local
+.env.staging
+.env.staging.local
+.env.production
+.env.production.local
+.dev.vars*
+!.dev.vars.staging.example
+!.dev.vars.production.example
 node_modules
 .react-router
 .wrangler

@@ -55,6 +55,12 @@ button:disabled {
   opacity: 0.45;
 }
 
+.primary-action.is-disabled {
+  cursor: wait;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
 .page {
   width: min(1120px, calc(100vw - 28px));
   margin: 0 auto;

@@ -3,14 +3,20 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "react-router dev",
+    "dev": "CLOUDFLARE_ENV=staging react-router dev",
+    "dev:staging": "CLOUDFLARE_ENV=staging react-router dev",
     "build": "react-router build",
-    "deploy": "wrangler deploy",
+    "build:staging": "CLOUDFLARE_ENV=staging react-router build",
+    "build:production": "CLOUDFLARE_ENV=production react-router build",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:production": "wrangler deploy --env production",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "db:generate": "drizzle-kit generate",
-    "db:migrate:local": "wrangler d1 migrations apply plurmurate --local",
-    "db:migrate:remote": "wrangler d1 migrations apply plurmurate --remote"
+    "db:migrate:local": "wrangler d1 migrations apply plurmurate --local --env staging",
+    "db:migrate:staging:local": "wrangler d1 migrations apply plurmurate --local --env staging",
+    "db:migrate:staging:remote": "wrangler d1 migrations apply plurmurate --remote --env staging",
+    "db:migrate:production:remote": "wrangler d1 migrations apply plurmurate --remote --env production"
   },
   "dependencies": {
     "@react-router/cloudflare": "latest",

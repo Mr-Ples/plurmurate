@@ -29,6 +29,7 @@ export async function loader({ request, context }: any) {
   url.searchParams.set("code_challenge_method", "S256");
   return redirectDocument(url.toString(), {
     headers: {
+      "Cache-Control": "no-store",
       "Set-Cookie": `plurmurate_oauth=${state}.${verifier}.${encodeURIComponent(redirectUri)}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=600`,
     },
   });

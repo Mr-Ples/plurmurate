@@ -5,9 +5,59 @@ Plurmurate is a community nomination and voting tool for deciding what a shared 
 
 ![abu_rating](./assets/ABU.jpeg)
 
-## Setup
+# Setup
 
-This app is a React Router app that runs on Cloudflare Workers. For local X login, expose the local dev server with jprq and use that HTTPS jprq URL in a dedicated X developer app.
+## X/Twitter Setup
+
+Create two separate X developer apps with the **Create App** button.
+
+Name them `plurmurate-staging` and `plurmurate-production` for example.
+- `plurmurate-staging`: used for local development and staging.
+- `plurmurate-production`: used for the live production deployment.
+
+For both apps, configure user authentication:
+
+- App permissions: **Read and write**.
+  - Do not choose **Read and write and Direct message**.
+- Type of App: **Web App, Automated App or Bot**.
+  - Do not choose **Native App**.
+
+Initial app info:
+
+- Use any temporary placeholder URL until the app has been deployed or tunneled.
+- After you have the real URL, update both the Website URL and callback URL.
+- The callback URL format is `{site-url}/auth/x/callback`.
+
+Staging/local URL flow:
+
+```bash
+npm run dev
+# After it starts
+# run the dev tunnel server terminal: press t, then Enter
+```
+
+You need to edit the staging X app callback and base url each time you restart the server:
+- Use the Cloudflare tunnel URL as the `plurmurate-staging` Website URL.
+- Use `{tunnel-url}/auth/x/callback` as the `plurmurate-staging` callback URL.
+
+For production you need to change the URL only once, after you followed the deploy steps below
+
+
+This app requests these X scopes:
+
+```text
+users.read tweet.read tweet.write media.write offline.access follows.read
+```
+
+Required secret values:
+
+```env
+SESSION_SECRET=replace-with-at-least-32-random-characters
+X_CLIENT_ID=your-x-oauth-client-id
+X_CLIENT_SECRET=your-x-oauth-client-secret
+```
+
+## App Setup
 
 Install dependencies:
 
@@ -15,219 +65,136 @@ Install dependencies:
 npm install
 ```
 
-Create a local environment file:
+Create local staging secrets:
 
 ```bash
-cp .env.example .env
+cp .dev.vars.staging.example .dev.vars.staging
 ```
 
-## Local X login with jprq
-
-X asks for a website URL because user login is a browser redirect flow. It needs a public HTTPS URL it can send the browser back to after login.
-
-Use jprq to expose the Plurmurate dev server itself. Do not use the separate `/media/projects/vps-personal` Flask bridge for this flow.
-
-Start Plurmurate locally:
-
-```bash
-npm run dev
-```
-
-In another terminal, expose port `5173` with jprq:
-
-```bash
-jprq http 5173 -s plurmurate
-```
-
-Use the HTTPS URL jprq gives you. It will look something like:
-
-```text
-https://plurmurate.mr-ples.jprq
-```
-
-The callback route already exists inside Plurmurate:
-
-```text
-/auth/x/callback
-```
-
-So the jprq callback URL is:
-
-```text
-https://plurmurate.mr-ples.jprq/auth/x/callback
-```
-
-If your jprq URL is different, use your actual jprq URL everywhere below.
-
-Create a dedicated X developer app for local Plurmurate development.
-
-On the app page, open the **Keys & Tokens** tab. You should see sections like:
-
-- **App-Only Authentication**
-- **OAuth 1.0 Keys**
-- **User authentication settings**
-
-For this app, ignore these sections:
-
-- **App-Only Authentication** / **Bearer Token**
-- **OAuth 1.0 Keys** / **Consumer Key**
-- **OAuth 1.0 Keys** / **Access Token**
-
-Those values are not used for local sign-in.
-
-In the **User authentication settings** section, click **Set up**. This is the section that says users can log in to your app with X.
-
-In the **Authentication settings** form, use these exact choices:
-
-- Under **App permissions**, select **Read and write**.
-  - Do not select **Read**. The app needs to publish posts.
-  - Do not select **Read and write and Direct message** unless you intentionally want DM access.
-- Leave **Request email from users** off.
-- Under **Type of App**, select **Web App, Automated App or Bot**.
-  - Do not select **Native App**. This repo expects the web/confidential app credentials.
-- Under **App info**, set **Callback URI / Redirect URL** to your jprq callback URL:
-
-```text
-https://plurmurate.mr-ples.jprq/auth/x/callback
-```
-
-- Set **Website URL** to your jprq app URL:
-
-```text
-https://plurmurate.mr-ples.jprq
-```
-
-- **Organization name** can be left blank unless X requires it for your account.
-- **Organization URL** can be left blank unless X requires it.
-- **Terms of Service** can be left blank unless X requires it.
-- **Privacy Policy** can be left blank unless X requires it.
-- Click **Save Changes**.
-
-After saving **User authentication settings**, X should show or generate the credentials for user login. Use those values for:
-
-- `X_CLIENT_ID`: the client ID shown after setting up user authentication
-- `X_CLIENT_SECRET`: the client secret shown after setting up user authentication
-
-The app derives the OAuth redirect URI from the URL you use to open it, so the X dashboard callback must match that public URL plus `/auth/x/callback`.
-
-This app asks X for these login permissions:
-
-```text
-users.read tweet.read tweet.write media.write offline.access follows.read
-```
-
-Set `.env` for local runtime settings and secrets:
+Edit `.dev.vars.staging`:
 
 ```env
 SESSION_SECRET=replace-with-at-least-32-random-characters
-DATABASE_PROVIDER=sqlite
-STORAGE_PROVIDER=local-r2
-
-X_CLIENT_ID=your-x-oauth-client-id
-X_CLIENT_SECRET=your-x-oauth-client-secret
+X_CLIENT_ID=your-staging-x-oauth-client-id
+X_CLIENT_SECRET=your-staging-x-oauth-client-secret
 ```
 
-Open the app through the jprq URL, not `localhost`, when testing X login:
-
-```text
-https://plurmurate.mr-ples.jprq
-```
-
-That keeps the login cookie and callback on the same HTTPS host.
-
-Apply the local D1 migrations:
+Apply local D1 migrations, then start the dev server:
 
 ```bash
 npm run db:migrate:local
+npm run dev
 ```
 
-Then run:
+Local dev behavior:
+
+- `npm run dev` uses `CLOUDFLARE_ENV=staging`.
+- Wrangler reads `env.staging` from `wrangler.jsonc`.
+- Wrangler loads secrets from `.dev.vars.staging`.
+
+## Cloudflare Environments
+
+Named Wrangler environments:
+
+- `staging`: used by `npm run dev`, local D1 migrations, and staging deploys. It deploys to the `plurmurate-staging` Worker.
+- `production`: used for the live app. It deploys to the `plurmurate` Worker.
+
+Wrangler config rules:
+
+- Each environment needs its own `vars`, `d1_databases`, and `r2_buckets`.
+- Wrangler does not inherit those keys from the top level into named environments.
+- Old Workers from previous experiments can be ignored unless you intentionally reuse them.
+
+Intended split:
+
+```text
+staging Worker:     plurmurate-staging
+production Worker:  plurmurate
+
+staging D1:         plurmurate
+production D1:      plurmurate-production
+
+staging R2:         plurmurate-media
+production R2:      plurmurate-media-production
+```
+
+Binding names:
+
+- Resource names can differ by environment.
+- Binding names must stay `DB` and `MEDIA_BUCKET` because the app reads `env.DB` and `env.MEDIA_BUCKET`.
+
+## Production Setup
+
+Create production resources:
 
 ```bash
-npm run dev
-jprq http 5173 -s plurmurate
+npx wrangler d1 create plurmurate-production
+npx wrangler r2 bucket create plurmurate-media-production
 ```
 
-## Cloudflare deployment
+Update `wrangler.jsonc`:
 
-For Cloudflare later, create a separate X developer app for production:
+- Set `env.production.d1_databases[0].database_id` to the production D1 `database_id`.
+
+Create production secrets:
+
+```bash
+cp .dev.vars.production.example .dev.vars.production
+```
+
+Edit `.dev.vars.production` with only secrets:
 
 ```env
 SESSION_SECRET=replace-with-at-least-32-random-characters
-DATABASE_PROVIDER=d1
-STORAGE_PROVIDER=r2
-
-X_CLIENT_ID=your-x-oauth-client-id
-X_CLIENT_SECRET=your-x-oauth-client-secret
+X_CLIENT_ID=your-production-x-oauth-client-id
+X_CLIENT_SECRET=your-production-x-oauth-client-secret
+X_PUBLISHING_ACCESS_TOKEN=
+X_PUBLISHING_REFRESH_TOKEN=
 ```
 
-Set secret values in Cloudflare/Wrangler rather than committing them to the repo.
-
-Create the Cloudflare resources:
-
-```bash
-npx wrangler d1 create plurmurate
-npx wrangler r2 bucket create plurmurate-media
-```
-
-Copy the D1 `database_id` from the `wrangler d1 create` output into `wrangler.jsonc`, replacing:
+Do not include keys already configured as plain `vars` in `wrangler.jsonc`:
 
 ```text
-00000000-0000-0000-0000-000000000000
+DATABASE_PROVIDER
+STORAGE_PROVIDER
+PUBLISHING_WORKFLOW
+X_HOST_USER_ID
+X_HOST_HANDLE
 ```
 
-In `wrangler.jsonc`, set the deployed runtime vars:
-
-```jsonc
-"vars": {
-  "DATABASE_PROVIDER": "d1",
-  "STORAGE_PROVIDER": "r2",
-  "PUBLISHING_WORKFLOW": "manual_review_when_qualified",
-  "X_HOST_USER_ID": "",
-  "X_HOST_HANDLE": ""
-}
-```
-
-Set production secrets:
+Upload production secrets:
 
 ```bash
-npx wrangler secret put SESSION_SECRET
-npx wrangler secret put X_CLIENT_ID
-npx wrangler secret put X_CLIENT_SECRET
+npx wrangler secret bulk .dev.vars.production --env production
 ```
 
-Publishing uses the stored OAuth tokens for the configured host account after that account logs in. If you want publishing to work without relying on a stored host login, also set:
+Apply production migrations and deploy:
 
 ```bash
-npx wrangler secret put X_PUBLISHING_ACCESS_TOKEN
+npm run db:migrate:production:remote
+npm run build:production
+npm run deploy:production
 ```
 
-Apply remote migrations and deploy:
+## Staging Deploy
 
 ```bash
-npm run db:migrate:remote
-npm run build
-npm run deploy
+npm run db:migrate:staging:remote
+npm run build:staging
+npm run deploy:staging
 ```
 
-After deploy, put the deployed Cloudflare URL into the X dashboard:
-
-```text
-Website URL:
-https://your-cloudflare-app-url
-
-Callback URI / Redirect URL:
-https://your-cloudflare-app-url/auth/x/callback
-```
-
-## Useful scripts
+## Scripts
 
 ```bash
-npm run dev              # Start the local React Router dev server
-npm run build            # Build the app
-npm run typecheck        # Run TypeScript checks
-npm run lint             # Run ESLint
-npm run db:migrate:local # Apply D1 migrations locally
-npm run db:migrate:remote # Apply D1 migrations to Cloudflare
-npm run deploy           # Deploy with Wrangler
+npm run dev                            # Start local dev against env.staging
+npm run build:staging                  # Build the staging app
+npm run build:production               # Build the production app
+npm run typecheck                      # Run TypeScript checks
+npm run lint                           # Run ESLint
+npm run db:migrate:local               # Apply local D1 migrations for staging dev
+npm run db:migrate:staging:remote      # Apply remote D1 migrations to staging
+npm run db:migrate:production:remote   # Apply remote D1 migrations to production
+npm run deploy:staging                 # Deploy staging with Wrangler
+npm run deploy:production              # Deploy production with Wrangler
 ```

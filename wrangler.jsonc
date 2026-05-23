@@ -12,29 +12,54 @@
 	"observability": {
 		"enabled": true
 	},
-	"vars": {
-		"DATABASE_PROVIDER": "d1",
-		"STORAGE_PROVIDER": "r2",
-		"PUBLISHING_WORKFLOW": "manual_review_when_qualified",
-		"X_HOST_USER_ID": "1521528464154808323",
-		"X_HOST_HANDLE": "evalladen"
-	},
-	"d1_databases": [
-		{
-			"binding": "DB",
-			"database_name": "plurmurate",
-			"database_id": "ce101d52-2d03-4737-9247-69cdce9168a4",
-			"migrations_dir": "drizzle/migrations"
-		}
-	],
-	"r2_buckets": [
-		{
-			"binding": "MEDIA_BUCKET",
-			"bucket_name": "plurmurate-media"
+	"env": {
+		"staging": {
+			"name": "plurmurate-staging",
+			"vars": {
+				"DATABASE_PROVIDER": "d1",
+				"STORAGE_PROVIDER": "r2",
+				"PUBLISHING_WORKFLOW": "manual_review_when_qualified",
+				"X_HOST_USER_ID": "1521528464154808323",
+				"X_HOST_HANDLE": "evalladen"
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "plurmurate",
+					"database_id": "ce101d52-2d03-4737-9247-69cdce9168a4",
+					"migrations_dir": "drizzle/migrations"
+				}
+			],
+			"r2_buckets": [
+				{
+					"binding": "MEDIA_BUCKET",
+					"bucket_name": "plurmurate-media"
+				}
+			]
 		},
-		{
-			"bucket_name": "plurmurate-media",
-			"binding": "plurmurate_media"
+		"production": {
+			"name": "plurmurate",
+			"vars": {
+				"DATABASE_PROVIDER": "d1",
+				"STORAGE_PROVIDER": "r2",
+				"PUBLISHING_WORKFLOW": "manual_review_when_qualified",
+				"X_HOST_USER_ID": "1521528464154808323",
+				"X_HOST_HANDLE": "evalladen"
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "plurmurate-production",
+					"database_id": "fa8d2c00-8479-4007-93d4-928772606489",
+					"migrations_dir": "drizzle/migrations"
+				}
+			],
+			"r2_buckets": [
+				{
+					"binding": "MEDIA_BUCKET",
+					"bucket_name": "plurmurate-media-production"
+				}
+			]
 		}
-	]
+	}
 }
