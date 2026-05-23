@@ -82,10 +82,23 @@ export class LiveXClient implements XClient {
   }
 
   async getTweetById(tweetId: string, accessToken: string) {
-    const data = await this.request<{ data: any }>(`https://api.x.com/2/tweets/${tweetId}`, {
+    const url = new URL(`https://api.x.com/2/tweets/${tweetId}`);
+    url.searchParams.set("tweet.fields", "author_id,created_at");
+    url.searchParams.set("expansions", "author_id");
+    url.searchParams.set("user.fields", "profile_image_url,verified");
+    const data = await this.request<{ data: any; includes?: { users?: any[] } }>(url.toString(), {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    return { id: data.data.id, text: data.data.text, authorId: data.data.author_id };
+    const author = data.includes?.users?.find((user) => user.id === data.data.author_id);
+    return {
+      id: data.data.id,
+      text: data.data.text,
+      authorId: data.data.author_id ?? null,
+      authorUsername: author?.username ?? null,
+      authorName: author?.name ?? null,
+      authorProfileImageUrl: author?.profile_image_url ?? null,
+      createdAt: data.data.created_at ?? null,
+    };
   }
 
   async uploadMedia(input: UploadMediaInput) {

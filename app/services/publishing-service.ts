@@ -6,7 +6,7 @@ import type { CurrentUser } from "~/repositories/interfaces";
 import { LiveXClient } from "~/x/live-x-client";
 import { getSettings } from "./settings-service";
 
-async function getPublishingAccessToken(context: AppLoadContext, hostUserId: string, client: LiveXClient) {
+export async function getPublishingAccessToken(context: AppLoadContext, hostUserId: string, client: LiveXClient) {
   const env = context.cloudflare.env;
   const repos = getRepositories(env);
   const credentials = await repos.users.findPublishingCredentialsByXUserId(hostUserId);

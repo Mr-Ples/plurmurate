@@ -1,4 +1,5 @@
 import { Form, useLocation, useNavigate } from "react-router";
+import { TargetTweetCard } from "~/components/TargetTweetCard";
 import { nominationTypeLabel, type FeedNomination } from "~/domain/nominations";
 import type { CurrentUser } from "~/repositories/interfaces";
 
@@ -68,7 +69,7 @@ export function NominationCard({
         </div>
       </div>
       {nomination.text ? <p className="relative my-[18px] text-[clamp(1.05rem,2vw,1.45rem)] leading-[1.32]">{nomination.text}</p> : null}
-      {nomination.targetTweetUrl ? <span className="relative inline-block border-b border-[#526f8d73] text-[#526f8d]">Target X post {nomination.targetTweetId}</span> : null}
+      <TargetTweetCard tweet={nomination.targetTweet} fallbackUrl={nomination.targetTweetUrl} fallbackId={nomination.targetTweetId} />
       {nominationMediaUrls.length ? (
         <div className={`relative my-3.5 grid overflow-hidden rounded-md border border-[#1f242129] ${nominationMediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
           {nominationMediaUrls.map((url, index) => (

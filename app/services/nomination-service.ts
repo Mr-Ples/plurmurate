@@ -4,6 +4,7 @@ import { requirePermission } from "~/lib/permissions/permissions";
 import { parseTweetUrl } from "~/lib/utils/tweets";
 import { getRepositories } from "~/repositories/drizzle/repositories";
 import type { CurrentUser } from "~/repositories/interfaces";
+import { fetchAndCacheExternalTweet } from "./external-tweet-service";
 import { getSettings } from "./settings-service";
 
 export async function createNomination(context: AppLoadContext, actor: CurrentUser, formData: FormData) {
@@ -26,6 +27,9 @@ export async function createNomination(context: AppLoadContext, actor: CurrentUs
     rationale: parsed.rationale || null,
   });
   await repos.auditLogs.create({ actorUserId: actor.id, action: "nomination.create", entityType: "nomination", entityId: nomination.id, metadata: { type: nomination.type } });
+  if (target) {
+    await fetchAndCacheExternalTweet(context, target.tweetId, target.url).catch(() => null);
+  }
   return nomination;
 }
 

@@ -1,4 +1,5 @@
 import type { FeedNomination, Nomination, NominationStatus, NominationType } from "~/domain/nominations";
+import type { ExternalTweetPreview } from "~/domain/external-tweets";
 import type { RoleName } from "~/domain/roles";
 import type { AppSettings } from "~/domain/settings";
 import type { VoteSummary, VoteValue } from "~/domain/votes";
@@ -79,6 +80,21 @@ export interface NominationRepository {
   attachMedia(id: string, field: "tweetAvatarMediaId" | "nominationMediaId", mediaId: string): Promise<void>;
 }
 
+export interface ExternalTweetRepository {
+  findById(tweetId: string): Promise<ExternalTweetPreview | null>;
+  upsert(input: {
+    tweetId: string;
+    url: string;
+    authorUsername?: string | null;
+    authorName?: string | null;
+    authorProfileImageUrl?: string | null;
+    authorId?: string | null;
+    textPreview?: string | null;
+    fetchStatus: "ok" | "failed";
+    rawJson?: unknown;
+  }): Promise<ExternalTweetPreview>;
+}
+
 export interface VoteRepository {
   upsertVote(input: {
     nominationId: string;
@@ -136,6 +152,7 @@ export interface Repositories {
   sessions: SessionRepository;
   roles: RoleRepository;
   nominations: NominationRepository;
+  externalTweets: ExternalTweetRepository;
   votes: VoteRepository;
   settings: SettingsRepository;
   media: MediaRepository;

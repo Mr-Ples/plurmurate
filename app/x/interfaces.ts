@@ -9,7 +9,11 @@ export interface XUser {
 export interface XTweet {
   id: string;
   text: string;
-  authorId?: string;
+  authorId?: string | null;
+  authorUsername?: string | null;
+  authorName?: string | null;
+  authorProfileImageUrl?: string | null;
+  createdAt?: string | null;
 }
 
 export interface UploadMediaInput {

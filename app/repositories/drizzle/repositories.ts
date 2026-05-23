@@ -8,6 +8,7 @@ import { newId } from "~/lib/utils/id";
 import type { Repositories } from "../interfaces";
 import {
   auditLogs,
+  externalTweets,
   mediaAssets,
   nominations,
   publishAttempts,
@@ -51,6 +52,20 @@ function mapNomination(row: any) {
     approvedAt: row.approvedAt,
     sentAt: row.sentAt,
     hiddenAt: row.hiddenAt,
+  };
+}
+
+function mapExternalTweet(row: any) {
+  return {
+    tweetId: row.tweetId,
+    url: row.url,
+    authorUsername: row.authorUsername,
+    authorName: row.authorName,
+    authorProfileImageUrl: row.authorProfileImageUrl,
+    authorId: row.authorId,
+    textPreview: row.textPreview,
+    fetchedAt: row.fetchedAt,
+    fetchStatus: row.fetchStatus,
   };
 }
 
@@ -213,10 +228,12 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
             creatorDisplayName: users.displayName,
             creatorProfileImageUrl: users.profileImageUrl,
             nominationMediaUrl: mediaAssets.publicUrl,
+            targetTweet: externalTweets,
           })
           .from(nominations)
           .innerJoin(users, eq(nominations.creatorUserId, users.id))
           .leftJoin(mediaAssets, eq(nominations.nominationMediaId, mediaAssets.id))
+          .leftJoin(externalTweets, eq(nominations.targetTweetId, externalTweets.tweetId))
           .where(
             and(
               filter.status ? eq(nominations.status, filter.status) : undefined,
@@ -270,6 +287,7 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
               nominationMediaUrl: row.nominationMediaUrl,
               nominationMediaUrls,
               tweetAvatarUrl: row.creatorProfileImageUrl,
+              targetTweet: row.targetTweet ? mapExternalTweet(row.targetTweet) : null,
             };
           }),
         );
@@ -292,6 +310,35 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
       },
       async attachMedia(id, field, mediaId) {
         await db.update(nominations).set({ [field]: mediaId, updatedAt: new Date().toISOString() }).where(eq(nominations.id, id)).run();
+      },
+    },
+    externalTweets: {
+      async findById(tweetId) {
+        const row = await db.select().from(externalTweets).where(eq(externalTweets.tweetId, tweetId)).get();
+        return row ? mapExternalTweet(row) : null;
+      },
+      async upsert(input) {
+        const row = {
+          tweetId: input.tweetId,
+          url: input.url,
+          authorUsername: input.authorUsername ?? null,
+          authorName: input.authorName ?? null,
+          authorProfileImageUrl: input.authorProfileImageUrl ?? null,
+          authorId: input.authorId ?? null,
+          textPreview: input.textPreview ?? null,
+          fetchedAt: new Date().toISOString(),
+          fetchStatus: input.fetchStatus,
+          rawJson: input.rawJson ? JSON.stringify(input.rawJson) : null,
+        };
+        await db
+          .insert(externalTweets)
+          .values(row)
+          .onConflictDoUpdate({
+            target: externalTweets.tweetId,
+            set: row,
+          })
+          .run();
+        return mapExternalTweet(await db.select().from(externalTweets).where(eq(externalTweets.tweetId, input.tweetId)).get());
       },
     },
     votes: {

@@ -103,6 +103,8 @@ export const externalTweets = sqliteTable("external_tweets", {
   tweetId: text("tweet_id").primaryKey(),
   url: text("url").notNull(),
   authorUsername: text("author_username"),
+  authorName: text("author_name"),
+  authorProfileImageUrl: text("author_profile_image_url"),
   authorId: text("author_id"),
   textPreview: text("text_preview"),
   fetchedAt: text("fetched_at"),

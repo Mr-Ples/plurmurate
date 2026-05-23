@@ -1,3 +1,5 @@
+import type { ExternalTweetPreview } from "./external-tweets";
+
 export const nominationTypes = ["original", "quote", "repost", "reply"] as const;
 export const nominationStatuses = [
   "draft",
@@ -54,4 +56,5 @@ export interface FeedNomination extends Nomination {
   nominationMediaUrl: string | null;
   nominationMediaUrls: string[];
   tweetAvatarUrl: string | null;
+  targetTweet: ExternalTweetPreview | null;
 }
