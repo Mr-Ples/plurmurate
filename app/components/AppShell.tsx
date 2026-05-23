@@ -9,7 +9,7 @@ export function AppShell({ user, children }: { user: CurrentUser | null; childre
       <header className="topbar">
         <Link className="brand" to="/">Plurmurate</Link>
         <nav className="nav">
-          <Link to="/nominations/new">Nominate</Link>
+          <Link to="/nominations/new">New Post</Link>
           {isPublisher ? <Link to="/review">Review</Link> : null}
           {isAdmin ? <Link to="/settings">Settings</Link> : null}
           {user ? <Link to="/me">@{user.username ?? "me"}</Link> : <Link to="/login">Login</Link>}
