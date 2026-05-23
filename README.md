@@ -23,7 +23,7 @@ For both apps, configure user authentication:
   - Do not choose **Native App**.
 - Use any temporary placeholder URL for now until the app has been deployed or tunneled.
 
-Create prodcution and staging secrets:
+Create production and staging secrets:
 
 ```bash
 cp .dev.vars.staging.example .dev.vars.staging
@@ -46,21 +46,7 @@ X_CLIENT_ID=your-production-x-oauth-client-id
 X_CLIENT_SECRET=your-production-x-oauth-client-secret
 ```
 
-Staging/local URL flow:
-
-```bash
-npm run dev
-# After it starts
-# run the dev tunnel server terminal: press t, then Enter
-```
-
 ## App Setup
-
-Install dependencies:
-
-```bash
-npm install
-```
 
 Create local Wrangler config:
 
@@ -68,18 +54,29 @@ Create local Wrangler config:
 cp wrangler.example.jsonc wrangler.jsonc
 ```
 
+Create the staging D1 database:
+
+```bash
+npx wrangler d1 create plurmurate
+```
+
 Edit `wrangler.jsonc`:
 
-- Set `env.staging.d1_databases[0].database_id`.
-- Set `env.production.d1_databases[0].database_id`.
-- Set `X_HOST_USER_ID` and `X_HOST_HANDLE` in each environment if you know them.
-- Keep binding names as `DB` and `MEDIA_BUCKET`.
+- Set the `database_id` printed by `npx wrangler d1 create plurmurate`.
+- Set the host account vars `X_HOST_HANDLE` and `X_HOST_USER_ID` (find id here: https://twxpicker.com/user-id-finder)
 
-Apply local D1 migrations, then start the dev server:
+Apply migrations to the local D1 database, then start the dev server:
 
 ```bash
 npm run db:migrate:local
 npm run dev
+```
+
+Apply the same migrations to the remote staging D1 database before deploying
+staging:
+
+```bash
+npm run db:migrate:staging:remote
 ```
 
 Local dev behavior:

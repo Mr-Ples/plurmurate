@@ -13,10 +13,10 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "db:generate": "drizzle-kit generate",
-    "db:migrate:local": "wrangler d1 migrations apply plurmurate --local --env staging",
-    "db:migrate:staging:local": "wrangler d1 migrations apply plurmurate --local --env staging",
-    "db:migrate:staging:remote": "wrangler d1 migrations apply plurmurate --remote --env staging",
-    "db:migrate:production:remote": "wrangler d1 migrations apply plurmurate --remote --env production"
+    "db:migrate:local": "wrangler d1 migrations apply DB --local --env staging",
+    "db:migrate:staging:local": "wrangler d1 migrations apply DB --local --env staging",
+    "db:migrate:staging:remote": "wrangler d1 migrations apply DB --remote --env staging",
+    "db:migrate:production:remote": "wrangler d1 migrations apply DB --remote --env production"
   },
   "dependencies": {
     "@react-router/cloudflare": "latest",

@@ -24,7 +24,7 @@
 			"d1_databases": [
 				{
 					"binding": "DB",
-					"database_name": "plurmurate-staging",
+					"database_name": "plurmurate",
 					"database_id": "replace-with-staging-d1-database-id",
 					"migrations_dir": "drizzle/migrations"
 				}
@@ -32,7 +32,7 @@
 			"r2_buckets": [
 				{
 					"binding": "MEDIA_BUCKET",
-					"bucket_name": "plurmurate-media-staging"
+					"bucket_name": "plurmurate-media"
 				}
 			]
 		},
