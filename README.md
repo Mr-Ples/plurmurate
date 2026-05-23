@@ -126,7 +126,7 @@ Copy the URL from the tunnel to the staging X app configuration **Website URL** 
 
 ### Staging (Optional)
 
-You have a local setup but if you want to be safe you can deploy staging to a seperate worker
+You have a local setup but if you want to be safe you can deploy staging to a seperate worker. You can also use staging if you get tired of copying the local tunnel url to the x app configuration. But then you need to deploy after each change anyway.
 
 Upload staging secrets:
 
