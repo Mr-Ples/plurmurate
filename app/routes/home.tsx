@@ -98,7 +98,7 @@ export default function Home() {
         <section className="self-start md:sticky md:top-5">
           {host ? (
             <a className="mb-4 grid grid-cols-[46px_minmax(0,1fr)] items-center gap-3 rounded-lg border border-[#1f242129] bg-[#fffcf49e] p-3 hover:border-[#1f24214d] hover:bg-[#fffcf4d1]" href={`https://x.com/${host.handle}`} target="_blank" rel="noreferrer">
-              {host.profileImageUrl ? <img className="h-[46px] w-[46px] rounded-lg bg-[#ddd4c5] object-cover" src={host.profileImageUrl} alt="" /> : <span className="inline-flex h-[46px] w-[46px] items-center justify-center rounded-lg bg-[#ddd4c5] font-bold text-[#6e716b]" aria-hidden="true">{host.handle[0]?.toUpperCase()}</span>}
+              {host.profileImageUrl ? <img className="h-[46px] w-[46px] rounded-full bg-[#ddd4c5] object-cover" src={host.profileImageUrl} alt="" /> : <span className="inline-flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[#ddd4c5] font-bold text-[#6e716b]" aria-hidden="true">{host.handle[0]?.toUpperCase()}</span>}
               <span className="block min-w-0">
                 <span className="mb-0.5 block text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Host Account</span>
                 {host.displayName ? <strong className="block overflow-hidden text-ellipsis whitespace-nowrap text-[0.98rem]">{host.displayName}</strong> : null}

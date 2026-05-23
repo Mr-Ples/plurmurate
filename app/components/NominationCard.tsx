@@ -13,7 +13,7 @@ export function NominationCard({ nomination, user, review = false }: { nominatio
     <article className="relative overflow-hidden rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-[18px] shadow-[0_12px_30px_rgba(31,36,33,0.06)]">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(82,111,141,0.12),transparent_50%),linear-gradient(45deg,transparent,rgba(140,91,74,0.08))]" />
       <div className="relative flex items-center gap-2.5">
-        <img className="h-[42px] w-[42px] rounded-md bg-[#ddd4c5] object-cover" src={nomination.tweetAvatarUrl ?? nomination.creatorProfileImageUrl ?? "/favicon.ico"} alt="" />
+        <img className="h-[42px] w-[42px] rounded-full bg-[#ddd4c5] object-cover" src={nomination.tweetAvatarUrl ?? nomination.creatorProfileImageUrl ?? "/favicon.ico"} alt="" />
         <div>
           <p className="m-0 text-xs uppercase tracking-[0.08em] text-[#6e716b]">{nominationTypeLabel(nomination.type)} / {nomination.status}</p>
           <p className="mt-0.5 mb-0 text-[#6e716b]">@{nomination.creatorUsername ?? "unknown"} nominated</p>
