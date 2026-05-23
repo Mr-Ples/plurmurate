@@ -33,6 +33,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
   const remaining = limit - count;
   const needsTargetUrl = selectedType === "quote" || selectedType === "repost" || selectedType === "reply";
   const isRepost = selectedType === "repost";
+  const isOriginal = selectedType === "original";
   const mediaTitle = selectedImages.length
     ? `${selectedImages.length} image${selectedImages.length === 1 ? "" : "s"} selected`
     : "Add media";
@@ -118,13 +119,13 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
       ) : null}
       <section className="grid grid-cols-[40px_minmax(0,1fr)] gap-3 rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-3 md:grid-cols-[52px_minmax(0,1fr)] md:gap-3.5 md:p-4">
         {user?.profileImageUrl ? (
-          <img className="flex h-10 w-10 items-center justify-center rounded-full bg-[#ddd4c5] object-cover md:h-12 md:w-12" src={user.profileImageUrl} alt="" />
+          <img className={`flex h-10 w-10 items-center justify-center rounded-full bg-[#ddd4c5] object-cover md:h-12 md:w-12 ${isRepost ? "opacity-50" : ""}`} src={user.profileImageUrl} alt="" />
         ) : (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#1f242129] bg-[#ddd4c5] font-semibold text-[#6e716b] md:h-12 md:w-12" aria-hidden="true">?</div>
+          <div className={`flex h-10 w-10 items-center justify-center rounded-full border border-[#1f242129] bg-[#ddd4c5] font-semibold text-[#6e716b] md:h-12 md:w-12 ${isRepost ? "opacity-50" : ""}`} aria-hidden="true">?</div>
         )}
         <div className="min-w-0">
           <label className={srOnlyClass} htmlFor="nomination-text">Post text</label>
-          <div className="relative h-[138px]">
+          <div className={`relative h-[138px] ${isRepost ? "opacity-50" : ""}`}>
             {text ? (
               <div
                 className="pointer-events-none absolute inset-0 h-[138px] overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-transparent bg-transparent p-2 text-[1.18rem] leading-[1.4] text-transparent [scrollbar-gutter:stable]"
@@ -154,7 +155,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
             <div
               className={`mt-3 grid overflow-hidden rounded-xl border border-[#1f242129] bg-[#1f24210a] ${
                 selectedImages.length === 1 ? "grid-cols-1" : "grid-cols-2"
-              }`}
+              } ${isRepost ? "opacity-50" : ""}`}
               aria-label="Selected media"
             >
               {selectedImages.map((image, index) => (
@@ -189,7 +190,12 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
             </div>
           ) : null}
           <div className="flex items-center gap-2.5 border-t border-[#1f242129] pt-3">
-            {user && !isRepost ? (
+            {isRepost ? (
+              <span className={`${iconButtonClass} cursor-not-allowed border-[#1f242114] bg-[#1f24210a] text-[#6e716b] opacity-30 grayscale`} title="Reposts cannot include media" aria-disabled="true">
+                <Image size={19} aria-hidden="true" />
+                <span className={srOnlyClass}>Reposts cannot include media</span>
+              </span>
+            ) : user ? (
               <label
                 className={`${iconButtonClass} ${mediaLimitReached ? "cursor-not-allowed opacity-45" : ""}`}
                 title={mediaLimitReached ? "Maximum 4 images" : mediaTitle}
@@ -210,16 +216,11 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
                   onChange={(event) => handleMediaChange(event.currentTarget.files)}
                 />
               </label>
-            ) : !user ? (
+            ) : (
               <Link className={iconButtonClass} to="/login" title="Login to add media">
                 <Image size={19} aria-hidden="true" />
                 <span className={srOnlyClass}>Login to add media</span>
               </Link>
-            ) : (
-              <span className={`${iconButtonClass} cursor-not-allowed opacity-55`} title="Reposts cannot include media">
-                <Image size={19} aria-hidden="true" />
-                <span className={srOnlyClass}>Reposts cannot include media</span>
-              </span>
             )}
             <div className={`relative ml-auto inline-flex h-[38px] w-[38px] items-center justify-center text-xs ${overLimit ? "text-[#9f1d1d]" : "text-[#6e716b]"}`} aria-label={`${Math.abs(remaining)} characters ${overLimit ? "over" : "remaining"}`}>
               <svg className="absolute inset-0 h-[38px] w-[38px] -rotate-90" viewBox="0 0 36 36" aria-hidden="true">
@@ -260,7 +261,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
             ))}
           </select>
         </label>
-        <label className="grid gap-1.5">
+        <label className={`grid gap-1.5 ${isOriginal ? "opacity-45" : ""}`}>
           <span className="inline-flex items-center gap-1.5">
             Target X post URL
             <span className="group relative inline-flex h-[22px] w-[22px] items-center justify-center rounded-full border border-[#1f242129] text-[#6e716b]" tabIndex={0} aria-label="For reposts, replies, and quotes a URL is required">
@@ -268,7 +269,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
               <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-30 w-[min(280px,70vw)] -translate-x-1/2 translate-y-1 rounded-md border border-[#1f242129] bg-[#1f2421] px-3 py-2.5 text-sm leading-snug text-[#fffaf0] opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100 group-focus:translate-y-0 group-focus:opacity-100">For reposts, replies, and quotes a URL is required</span>
             </span>
           </span>
-          <input className={fieldClass} name="targetTweetUrl" type="url" placeholder="https://x.com/user/status/..." required={needsTargetUrl} />
+          <input className={`${fieldClass} disabled:cursor-not-allowed`} name="targetTweetUrl" type="url" placeholder="https://x.com/user/status/..." required={needsTargetUrl} disabled={isOriginal} />
         </label>
       </div>
       <label className="grid gap-1.5">

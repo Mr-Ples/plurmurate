@@ -10,6 +10,7 @@ export async function fetchAndCacheExternalTweet(context: AppLoadContext, tweetI
   const repos = getRepositories(env);
   const existing = await repos.externalTweets.findById(tweetId);
   if (existing?.fetchStatus === "ok") return existing;
+  if (existing?.fetchStatus === "failed" && existing.fetchedAt && Date.now() - Date.parse(existing.fetchedAt) < 1000 * 60 * 15) return existing;
 
   const settings = await getSettings(context);
   const hostUserId = settings.hostUserId || env.X_HOST_USER_ID;
