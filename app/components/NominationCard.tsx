@@ -33,6 +33,7 @@ export function NominationCard({
       ? [nomination.nominationMediaUrl]
       : [];
   const targetPost = <TargetTweetCard tweet={nomination.targetTweet} fallbackUrl={nomination.targetTweetUrl} fallbackId={nomination.targetTweetId} flush />;
+  const replyTargetPost = <TargetTweetCard tweet={nomination.targetTweet} fallbackUrl={nomination.targetTweetUrl} fallbackId={nomination.targetTweetId} />;
   const motivation = nomination.rationale ? (
     <div className="relative mt-4 rounded-md border border-[#1f242129] bg-white/35 p-3 text-sm leading-snug text-[#526f8d]">
       <p className="m-0 text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Motivation</p>
@@ -51,7 +52,7 @@ export function NominationCard({
       ))}
     </div>
   ) : null;
-  return (
+  const card = (
     <article
       className="relative cursor-pointer overflow-hidden rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-[18px] shadow-[0_12px_30px_rgba(31,36,33,0.06)]"
       role="link"
@@ -96,7 +97,6 @@ export function NominationCard({
         </div>
       ) : nomination.type === "reply" ? (
         <>
-          {targetPost}
           {nomination.text ? <p className="relative mt-4 mb-[18px] border-l-2 border-[#526f8d73] pl-4 text-[clamp(1.05rem,2vw,1.45rem)] leading-[1.32]">{nomination.text}</p> : null}
           {media}
           {motivation}
@@ -133,5 +133,12 @@ export function NominationCard({
         </Form>
       ) : null}
     </article>
+  );
+  if (nomination.type !== "reply") return card;
+  return (
+    <div className="grid gap-2.5">
+      {replyTargetPost}
+      {card}
+    </div>
   );
 }

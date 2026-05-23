@@ -54,6 +54,7 @@ export default function NominationDetail() {
       ? [nomination.nominationMediaUrl]
       : [];
   const targetPost = <TargetTweetCard tweet={nomination.targetTweet} fallbackUrl={nomination.targetTweetUrl} fallbackId={nomination.targetTweetId} flush />;
+  const replyTargetPost = <TargetTweetCard tweet={nomination.targetTweet} fallbackUrl={nomination.targetTweetUrl} fallbackId={nomination.targetTweetId} />;
   const media = nominationMediaUrls.length ? (
     <div className={`relative my-3.5 grid overflow-hidden rounded-md border border-[#1f242129] ${nominationMediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
       {nominationMediaUrls.map((url, index) => (
@@ -87,6 +88,8 @@ export default function NominationDetail() {
           </Link>
         )}
         <div className="grid gap-5 md:grid-cols-[1fr_minmax(240px,340px)]">
+        <div className="grid gap-2.5">
+        {nomination.type === "reply" ? replyTargetPost : null}
         <article className="relative overflow-hidden rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-[18px] shadow-[0_12px_30px_rgba(31,36,33,0.06)]">
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(82,111,141,0.12),transparent_50%),linear-gradient(45deg,transparent,rgba(140,91,74,0.08))]" />
           <p className="relative m-0 text-xs uppercase tracking-[0.08em] text-[#6e716b]">{nominationTypeLabel(nomination.type)} / {nomination.status}</p>
@@ -98,7 +101,6 @@ export default function NominationDetail() {
             </div>
           ) : nomination.type === "reply" ? (
             <>
-              {targetPost}
               {nomination.text ? <h1 className="relative mt-4 mb-[18px] border-l-2 border-[#526f8d73] pl-4 text-[clamp(1.35rem,3vw,2.25rem)] leading-[1.18] font-medium">{nomination.text}</h1> : null}
               {media}
               {motivation}
@@ -125,6 +127,7 @@ export default function NominationDetail() {
             <input className={fieldClass} name="comment" maxLength={400} placeholder="Optional vote comment" disabled={!canVote} />
           </Form>
         </article>
+        </div>
         <section className="overflow-auto rounded-lg border border-[#1f242129] bg-[#fffcf4ad] p-4">
           <h2>Vote comments</h2>
           {comments.length ? comments.map((comment, index) => <p key={index}><strong>{comment.value}</strong> @{comment.username}: {comment.comment}</p>) : <p>No vote comments yet.</p>}

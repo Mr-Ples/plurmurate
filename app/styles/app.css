@@ -3,3 +3,25 @@
 html {
   scrollbar-gutter: stable;
 }
+
+.target-tweet-embed > blockquote.twitter-tweet {
+  margin: 0;
+  max-width: none;
+  border: 1px solid #1f242129;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.55);
+  padding: 14px;
+  color: #1f2421;
+  font: inherit;
+}
+
+.target-tweet-embed > blockquote.twitter-tweet p {
+  margin: 0 0 10px;
+  white-space: pre-wrap;
+}
+
+.target-tweet-embed > blockquote.twitter-tweet a {
+  color: #526f8d;
+  text-decoration: none;
+  border-bottom: 1px solid #526f8d73;
+}
