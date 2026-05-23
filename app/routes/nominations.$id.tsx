@@ -1,4 +1,5 @@
-import { Form, redirect, useLoaderData } from "react-router";
+import { ArrowLeft } from "lucide-react";
+import { Form, Link, redirect, useLoaderData, useLocation } from "react-router";
 import { AppShell } from "~/components/AppShell";
 import { nominationTypeLabel } from "~/domain/nominations";
 import { getCurrentUser } from "~/lib/auth/session";
@@ -37,9 +38,17 @@ export async function action({ request, context, params }: any) {
 
 export default function NominationDetail() {
   const { user, nomination, comments } = useLoaderData<typeof loader>();
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from;
+  const backTo = from?.startsWith("/") ? from : "/";
   return (
     <AppShell user={user}>
-      <main className="grid gap-5 py-[42px] pb-20 md:grid-cols-[1fr_minmax(240px,340px)]">
+      <main className="grid gap-5 py-[42px] pb-20">
+        <Link className="inline-flex w-fit items-center gap-1.5 rounded-md border border-[#1f242129] bg-white/35 px-3 py-2 text-[#1f2421] hover:border-[#1f24214d] hover:bg-[#fffcf4d1]" to={backTo}>
+          <ArrowLeft size={17} aria-hidden="true" />
+          Back
+        </Link>
+        <div className="grid gap-5 md:grid-cols-[1fr_minmax(240px,340px)]">
         <article className="relative overflow-hidden rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-[18px] shadow-[0_12px_30px_rgba(31,36,33,0.06)]">
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(82,111,141,0.12),transparent_50%),linear-gradient(45deg,transparent,rgba(140,91,74,0.08))]" />
           <p className="relative m-0 text-xs uppercase tracking-[0.08em] text-[#6e716b]">{nominationTypeLabel(nomination.type)} / {nomination.status}</p>
@@ -71,6 +80,7 @@ export default function NominationDetail() {
           <h2>Vote comments</h2>
           {comments.length ? comments.map((comment, index) => <p key={index}><strong>{comment.value}</strong> @{comment.username}: {comment.comment}</p>) : <p>No vote comments yet.</p>}
         </section>
+        </div>
       </main>
     </AppShell>
   );
