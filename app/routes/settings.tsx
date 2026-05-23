@@ -74,23 +74,31 @@ export default function Settings() {
           <h1 className="m-0 font-serif text-[clamp(2rem,5vw,4.8rem)] leading-[0.95] font-medium">Settings</h1>
         </header>
 
-        <section className={cardClass}>
+        {/* <section className={cardClass}>
           <p className="m-0 text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Account</p>
           <div className="mt-2 grid gap-1 md:grid-cols-[1fr_auto] md:items-end">
             <div>
               <h2 className="m-0 text-xl font-medium">{user ? `@${user.username ?? "me"}` : "Signed out"}</h2>
-              <p className="m-0 text-[#6e716b]">Roles: {user?.roles.join(", ") || "none"}</p>
             </div>
             <p className="m-0 text-[#6e716b]">Visible nominations: {visibleNominationCount}</p>
           </div>
+        </section> */}
+
+        <section id="roles" className={`${cardClass} grid gap-4 scroll-mt-6`}>
+          <SectionHeader title="Roles" />
+          <div className="grid gap-2">
+            {users.map((account) => (
+              <RoleEditor key={account.id} account={account} />
+            ))}
+          </div>
         </section>
 
-        <Form method="post" className="grid gap-5">
+        <Form method="post" className="grid gap-5 lg:grid-cols-3 lg:items-start">
           <section className={`${cardClass} grid gap-4`}>
             <SectionHeader title="Voting" />
-            <div className="grid max-w-[640px] gap-3">
+            <div className="grid gap-3">
               <label className={labelClass}>
-                <LabelText text="Votes needed" info="How many total votes a nomination needs before it can qualify." />
+                <LabelText text="Minimum votes" info="How many total votes a nomination needs before it can qualify." />
                 <input className={fieldClass} name="minimumTotalVotes" type="number" min={1} defaultValue={settings.minimumTotalVotes} />
               </label>
               <label className={labelClass}>
@@ -110,7 +118,7 @@ export default function Settings() {
                 <input className={fieldClass} name="maximumVotingAgeDays" type="number" min={1} defaultValue={settings.maximumVotingAgeDays} />
               </label>
             </div>
-            <div className="grid max-w-[640px] gap-2">
+            <div className="grid gap-2">
               <Toggle name="creatorSelfVoteAllowed" defaultChecked={settings.creatorSelfVoteAllowed} title="Creator self-votes" info="Let people vote on nominations they created." />
               <Toggle name="privilegedVotesCountTowardCriteria" defaultChecked={settings.privilegedVotesCountTowardCriteria} title="Staff votes count" info="Count host, admin, and publisher votes toward approval rules." />
               <Toggle name="deniedVisibleByDefault" defaultChecked={settings.deniedVisibleByDefault} title="Show denied nominations" info="Keep denied nominations visible in normal views." />
@@ -119,7 +127,7 @@ export default function Settings() {
 
           <section className={`${cardClass} grid gap-4`}>
             <SectionHeader title="Publishing" />
-            <div className="grid max-w-[640px] gap-3">
+            <div className="grid gap-3">
               <label className={labelClass}>
                 <LabelText text="Publishing workflow" info="Choose whether qualified nominations go to review or publish automatically." />
                 <select className={fieldClass} name="publishingWorkflow" defaultValue={settings.publishingWorkflow}>
@@ -148,7 +156,7 @@ export default function Settings() {
                 <input className={fieldClass} name="maxImageUploadMegabytes" type="number" min={1} step={1} defaultValue={maxImageUploadMb} />
               </label>
             </div>
-            <div className="grid max-w-[640px] gap-2">
+            <div className="grid gap-2">
               <Toggle name="includeTweetAvatarInPublishedMedia" defaultChecked={settings.includeTweetAvatarInPublishedMedia} title="Use avatars in publish images" info="Include uploaded tweet avatars in generated media for published posts." />
               <Toggle name="automaticRoleAssignmentEnabled" defaultChecked={settings.automaticRoleAssignmentEnabled} title="Automatic role assignment" info="Assign default roles automatically when users sign in." />
             </div>
@@ -156,26 +164,17 @@ export default function Settings() {
 
           <section className={`${cardClass} grid gap-4`}>
             <SectionHeader title="Nomination Types" />
-            <div className="grid max-w-[640px] gap-2">
+            <div className="grid gap-2">
               {nominationTypes.map((type) => (
                 <Toggle key={type} name={`enabledNominationTypes.${type}`} defaultChecked={settings.enabledNominationTypes.includes(type)} title={nominationTypeTitle(type)} info={nominationTypeInfo(type)} />
               ))}
             </div>
           </section>
 
-          <div className="sticky bottom-3 z-10 flex justify-end">
+          <div className="sticky bottom-3 z-10 flex justify-end lg:col-span-3">
             <button className={buttonClass}>Save settings</button>
           </div>
         </Form>
-
-        <section id="roles" className={`${cardClass} grid gap-4 scroll-mt-6`}>
-          <SectionHeader title="Roles" />
-          <div className="grid gap-2">
-            {users.map((account) => (
-              <RoleEditor key={account.id} account={account} />
-            ))}
-          </div>
-        </section>
       </main>
     </AppShell>
   );

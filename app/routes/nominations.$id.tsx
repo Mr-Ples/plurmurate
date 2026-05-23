@@ -9,7 +9,7 @@ import { voteOnNomination } from "~/services/vote-service";
 
 const buttonClass = "cursor-pointer rounded-md border border-[#1f2421] bg-[#1f2421] px-3.5 py-2.5 text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-45";
 const fieldClass = "rounded-md border border-[#1f242129] bg-white/45 px-3 py-2.5";
-const voteClass = "inline-flex h-10 min-w-[62px] cursor-pointer items-center justify-center gap-1.5 border border-[#1f242129] bg-white/45 px-3 text-sm font-medium text-[#1f2421] first:rounded-l-md last:rounded-r-md hover:bg-[#fffcf4] disabled:cursor-not-allowed disabled:opacity-45";
+const voteClass = "inline-flex h-10 min-w-[62px] cursor-pointer items-center justify-center gap-1.5 rounded-md border border-[#1f242129] bg-white/45 px-3 text-sm font-medium text-[#1f2421] hover:bg-[#fffcf4] disabled:cursor-not-allowed disabled:opacity-45";
 const activeVoteClass = "border-[#496d58] bg-[#496d58] text-[#fffaf0] hover:bg-[#496d58]";
 
 export async function loader({ request, context, params }: any) {
@@ -65,7 +65,7 @@ export default function NominationDetail() {
           <Form method="post" className="relative flex flex-wrap gap-2.5" title={isCreator && !settings.creatorSelfVoteAllowed ? "You cannot vote on your own nomination." : undefined}>
             <input type="hidden" name="_intent" value="vote" />
             <input type="hidden" name="nominationId" value={nomination.id} />
-            <div className="inline-flex">
+            <div className="flex gap-2">
               {(["A", "B", "U"] as const).map((value) => (
                 <button key={value} className={`${voteClass} ${nomination.userVote === value ? activeVoteClass : ""}`} name="value" value={value} disabled={!canVote} type="submit">
                   <span>{value}</span>

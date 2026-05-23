@@ -3,7 +3,7 @@ import { nominationTypeLabel, type FeedNomination } from "~/domain/nominations";
 import type { CurrentUser } from "~/repositories/interfaces";
 
 const buttonClass = "cursor-pointer rounded-md border border-[#1f2421] bg-[#1f2421] px-3.5 py-2.5 text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-45";
-const voteClass = "inline-flex h-9 min-w-[56px] cursor-pointer items-center justify-center gap-1.5 border border-[#1f242129] bg-white/45 px-3 text-sm font-medium text-[#1f2421] first:rounded-l-md last:rounded-r-md hover:bg-[#fffcf4] disabled:cursor-not-allowed disabled:opacity-45";
+const voteClass = "inline-flex h-9 min-w-[56px] cursor-pointer items-center justify-center gap-1.5 rounded-md border border-[#1f242129] bg-white/45 px-3 text-sm font-medium text-[#1f2421] hover:bg-[#fffcf4] disabled:cursor-not-allowed disabled:opacity-45";
 const activeVoteClass = "border-[#496d58] bg-[#496d58] text-[#fffaf0] hover:bg-[#496d58]";
 
 export function NominationCard({
@@ -65,7 +65,7 @@ export function NominationCard({
       {nomination.text ? <p className="relative my-[18px] text-[clamp(1.05rem,2vw,1.45rem)] leading-[1.32]">{nomination.text}</p> : null}
       {nomination.targetTweetUrl ? <span className="relative inline-block border-b border-[#526f8d73] text-[#526f8d]">Target X post {nomination.targetTweetId}</span> : null}
       {nomination.nominationMediaUrl ? <img className="relative my-3.5 block max-h-[420px] w-full rounded-md object-cover" src={nomination.nominationMediaUrl} alt="" /> : null}
-      <div className="relative mt-[18px] inline-flex items-center">
+      <div className="relative mt-[18px] flex items-center gap-2">
         {(["A", "B", "U"] as const).map((value) => (
           <Form method="post" action="/nominations/new" key={value} className="m-0" onClick={(event) => event.stopPropagation()}>
             <input type="hidden" name="_intent" value="vote" />

@@ -16,6 +16,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
   const [fileName, setFileName] = useState("");
   const [posting, setPosting] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const highlightRef = useRef<HTMLDivElement>(null);
   const limit = 280;
   const count = text.length;
   const overLimit = count > limit;
@@ -55,17 +56,32 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
         )}
         <div className="min-w-0">
           <label className={srOnlyClass} htmlFor="nomination-text">Post text</label>
-          <textarea
-            id="nomination-text"
-            name="text"
-            rows={5}
-            placeholder="What's happening?"
-            value={text}
-            disabled={isRepost}
-            required={!isRepost}
-            onChange={(event) => setText(event.currentTarget.value)}
-            className="h-[138px] w-full resize-none overflow-y-auto border-0 bg-transparent p-0 text-[1.18rem] leading-[1.4] text-[#1f2421] outline-none placeholder:text-[#6e716b]"
-          />
+          <div className="relative h-[138px]">
+            {text ? (
+              <div
+                className="pointer-events-none absolute inset-0 h-[138px] overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-transparent bg-transparent p-2 text-[1.18rem] leading-[1.4] text-transparent [scrollbar-gutter:stable]"
+                aria-hidden="true"
+                ref={highlightRef}
+              >
+                <span>{text.slice(0, limit)}</span>
+                {overLimit ? <mark className="rounded-[2px] bg-[#d9444433] text-transparent">{text.slice(limit)}</mark> : null}
+              </div>
+            ) : null}
+            <textarea
+              id="nomination-text"
+              name="text"
+              rows={5}
+              placeholder="What's happening?"
+              value={text}
+              disabled={isRepost}
+              required={!isRepost}
+              onChange={(event) => setText(event.currentTarget.value)}
+              onScroll={(event) => {
+                if (highlightRef.current) highlightRef.current.scrollTop = event.currentTarget.scrollTop;
+              }}
+              className="relative z-10 h-[138px] w-full resize-none overflow-y-auto rounded-md border border-transparent bg-transparent p-2 text-[1.18rem] leading-[1.4] text-[#1f2421] outline-none placeholder:text-[#6e716b] [scrollbar-gutter:stable]"
+            />
+          </div>
           <div className="flex items-center gap-2.5 border-t border-[#1f242129] pt-3">
             {user && !isRepost ? (
               <label className={iconButtonClass} title={fileName || "Add media"}>
