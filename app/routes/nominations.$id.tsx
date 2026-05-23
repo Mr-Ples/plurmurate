@@ -16,7 +16,7 @@ export async function loader({ request, context, params }: any) {
 
 export async function action({ request, context, params }: any) {
   const user = await getCurrentUser(request, context);
-  if (!user) throw new Response("Unauthorized", { status: 401 });
+  if (!user) throw redirect("/login");
   const formData = await request.formData();
   const intent = formData.get("_intent");
   if (intent === "vote") {

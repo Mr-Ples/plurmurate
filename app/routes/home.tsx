@@ -1,4 +1,4 @@
-import { Form, useLoaderData } from "react-router";
+import { Form, redirect, useLoaderData } from "react-router";
 import { AppShell } from "~/components/AppShell";
 import { NominationCard } from "~/components/NominationCard";
 import { getCurrentUser } from "~/lib/auth/session";
@@ -21,7 +21,7 @@ export async function loader({ request, context }: any) {
 
 export async function action({ request, context }: any) {
   const user = await getCurrentUser(request, context);
-  if (!user) throw new Response("Unauthorized", { status: 401 });
+  if (!user) throw redirect("/login");
   await voteOnNomination(context, user, await request.formData());
   return null;
 }
