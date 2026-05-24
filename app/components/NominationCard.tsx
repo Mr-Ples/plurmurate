@@ -1,13 +1,17 @@
+import { useState } from "react";
 import { Repeat2 } from "lucide-react";
 import { Form, useLocation, useNavigate } from "react-router";
 import { TargetTweetCard } from "~/components/TargetTweetCard";
 import { nominationTypeLabel, type FeedNomination } from "~/domain/nominations";
 import type { CurrentUser } from "~/repositories/interfaces";
 
-const buttonClass = "cursor-pointer rounded-md border border-[#1f2421] bg-[#1f2421] px-3.5 py-2.5 text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-45";
+const buttonClass = "cursor-pointer rounded-md border px-3.5 py-2.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-45";
+const primaryActionClass = `${buttonClass} border-[#1f2421] bg-[#1f2421] text-[#fffaf0] hover:bg-[#313834]`;
+const secondaryActionClass = `${buttonClass} border-[#1f242129] bg-white/45 text-[#1f2421] hover:border-[#1f24214d] hover:bg-[#fffcf4]`;
 const voteClass = "inline-flex h-9 min-w-[56px] cursor-pointer items-center justify-center gap-1.5 rounded-md border border-[#1f242129] bg-white/45 px-3 text-sm font-medium text-[#1f2421] hover:bg-[#fffcf4] disabled:cursor-not-allowed disabled:opacity-45";
-const activeVoteClass = "border-[#496d58] bg-[#496d58] text-[#fffaf0] hover:bg-[#496d58]";
+const activeVoteClass = "border-[#496d58] bg-[#dbeadf] text-[#1f2421] hover:bg-[#dbeadf]";
 const decisionFieldClass = "min-h-[72px] w-full rounded-md border border-[#1f242129] bg-white/45 px-3 py-2 text-sm outline-none focus:border-[#526f8d]";
+const manualUrlClass = "min-h-[38px] w-full rounded-md border border-[#1f242129] bg-white/55 px-3 py-2 text-sm outline-none focus:border-[#526f8d]";
 
 export function NominationCard({
   nomination,
@@ -18,11 +22,14 @@ export function NominationCard({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const [manualSendOpen, setManualSendOpen] = useState(false);
   const canVote = user?.roles.some((role) => ["voter", "publisher", "host", "admin"].includes(role)) && !["sent", "withdrawn"].includes(nomination.status);
   const canModerate = user?.roles.some((role) => ["publisher", "host", "admin"].includes(role));
   const canSend = ["qualified", "approved", "failed"].includes(nomination.status);
+  const canMarkSentManually = !["sent", "withdrawn"].includes(nomination.status);
   const canDeny = ["pending", "qualified", "approved", "failed", "denied"].includes(nomination.status);
   const canArchive = !["withdrawn", "sent"].includes(nomination.status);
+  const voteDisabledReason = getVoteDisabledReason(user, nomination.status);
   const expandedPath = `/nominations/${nomination.id}`;
   const creatorProfileUrl = nomination.creatorUsername ? `https://x.com/${nomination.creatorUsername}` : null;
   const openExpandedView = () => navigate(expandedPath, { state: { from: `${location.pathname}${location.search}` } });
@@ -45,6 +52,13 @@ export function NominationCard({
       <p className="mt-1.5 mb-0 text-[#1f2421]">{nomination.decisionRationale}</p>
     </div>
   ) : null;
+  const publishedLink = nomination.publishedTweetUrl ? (
+    <p className="relative mt-3 mb-0 text-sm">
+      <a className="border-b border-[#526f8d73] text-[#526f8d]" href={nomination.publishedTweetUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
+        Published post
+      </a>
+    </p>
+  ) : null;
   const media = nominationMediaUrls.length ? (
     <div className={`relative my-3.5 grid overflow-hidden rounded-md border border-[#1f242129] ${nominationMediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
       {nominationMediaUrls.map((url, index) => (
@@ -59,7 +73,7 @@ export function NominationCard({
   ) : null;
   const card = (
     <article
-      className="relative cursor-pointer overflow-hidden rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-[18px] shadow-[0_12px_30px_rgba(31,36,33,0.06)]"
+      className="relative cursor-pointer rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-[18px] shadow-[0_12px_30px_rgba(31,36,33,0.06)]"
       role="link"
       tabIndex={0}
       onClick={openExpandedView}
@@ -120,28 +134,53 @@ export function NominationCard({
             <input type="hidden" name="_intent" value="vote" />
             <input type="hidden" name="nominationId" value={nomination.id} />
             <input type="hidden" name="value" value={value} />
-            <button
-              className={`${voteClass} ${nomination.userVote === value ? activeVoteClass : ""}`}
-              disabled={!canVote}
-              title={nomination.userVote === value ? "Undo your vote" : undefined}
-              aria-pressed={nomination.userVote === value}
-            >
-              <span>{value}</span>
-              <strong>{value === "A" ? nomination.voteA : value === "B" ? nomination.voteB : nomination.voteU}</strong>
-            </button>
+            <span className="group relative inline-flex">
+              <button
+                className={`${voteClass} ${nomination.userVote === value ? activeVoteClass : ""}`}
+                disabled={!canVote}
+                title={canVote && nomination.userVote === value ? "Undo your vote" : undefined}
+                aria-describedby={!canVote && voteDisabledReason ? `${nomination.id}-${value}-vote-disabled` : undefined}
+                aria-pressed={nomination.userVote === value}
+              >
+                <span>{value}</span>
+                <strong>{value === "A" ? nomination.voteA : value === "B" ? nomination.voteB : nomination.voteU}</strong>
+              </button>
+              {!canVote && voteDisabledReason ? <VoteDisabledTip id={`${nomination.id}-${value}-vote-disabled`} text={voteDisabledReason} /> : null}
+            </span>
           </Form>
         ))}
       </div>
       {nomination.recentVoteComment ? <p className="relative text-[#6e716b]">"{nomination.recentVoteComment}"</p> : null}
       {decisionRationale}
+      {publishedLink}
       {canModerate && (canSend || canDeny || canArchive) ? (
         <Form method="post" className="relative mt-4 grid gap-2.5 border-t border-[#1f242129] pt-3.5" onClick={(event) => event.stopPropagation()}>
           <input type="hidden" name="nominationId" value={nomination.id} />
           <textarea className={decisionFieldClass} name="decisionRationale" maxLength={500} defaultValue={nomination.decisionRationale ?? ""} placeholder="Host decision rationale" />
           <div className="flex flex-wrap gap-2.5">
-            {canSend ? <button className={buttonClass} name="_intent" value="send">Send</button> : null}
-            {canDeny ? <button className={buttonClass} name="_intent" value="deny">Deny</button> : null}
-            {canArchive ? <button className={buttonClass} name="_intent" value="archive">Archive</button> : null}
+            {canSend ? <button className={primaryActionClass} name="_intent" value="send">Send</button> : null}
+            {canMarkSentManually ? (
+              <>
+                <button className={secondaryActionClass} type="button" onClick={() => setManualSendOpen(true)}>Sent manually</button>
+                {manualSendOpen ? (
+                  <div className="fixed inset-0 z-50 grid place-items-center bg-[#1f242166] p-4" role="presentation" onClick={() => setManualSendOpen(false)}>
+                    <div className="grid w-full max-w-[380px] gap-3 rounded-md border border-[#1f242129] bg-[#fffcf4] p-4 shadow-[0_18px_48px_rgba(31,36,33,0.22)]" role="dialog" aria-modal="true" aria-labelledby={`${nomination.id}-manual-send-title`} onClick={(event) => event.stopPropagation()}>
+                      <div className="grid gap-1">
+                        <h2 id={`${nomination.id}-manual-send-title`} className="m-0 text-base font-medium">Sent manually</h2>
+                        <p className="m-0 text-sm text-[#6e716b]">Add the published post URL if you have it.</p>
+                      </div>
+                      <input className={manualUrlClass} name="publishedTweetUrl" type="url" placeholder="Published post URL (optional)" />
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <button className={secondaryActionClass} type="button" onClick={() => setManualSendOpen(false)}>Cancel</button>
+                        <button className={primaryActionClass} name="_intent" value="sent_manually">Confirm</button>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+            {canDeny ? <button className={secondaryActionClass} name="_intent" value="deny">Deny</button> : null}
+            {canArchive ? <button className={secondaryActionClass} name="_intent" value="archive">Archive</button> : null}
           </div>
         </Form>
       ) : null}
@@ -156,5 +195,21 @@ export function NominationCard({
         {card}
       </div>
     </div>
+  );
+}
+
+function getVoteDisabledReason(user: CurrentUser | null, status: FeedNomination["status"]) {
+  if (!user) return "Log in with a voting role to vote.";
+  if (!user.roles.some((role) => ["voter", "publisher", "host", "admin"].includes(role))) return "Your account does not have a voting role.";
+  if (status === "sent") return "Voting is closed because this nomination has been sent.";
+  if (status === "withdrawn") return "Voting is closed because this nomination has been archived.";
+  return null;
+}
+
+function VoteDisabledTip({ id, text }: { id: string; text: string }) {
+  return (
+    <span id={id} role="tooltip" className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-30 w-[min(240px,70vw)] -translate-x-1/2 translate-y-1 rounded-md border border-[#1f242129] bg-[#1f2421] px-3 py-2 text-xs leading-snug text-[#fffaf0] opacity-0 shadow-[0_12px_30px_rgba(31,36,33,0.16)] transition group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+      {text}
+    </span>
   );
 }

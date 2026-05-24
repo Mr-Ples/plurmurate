@@ -20,7 +20,11 @@ export async function evaluateNomination(context: AppLoadContext, nomination: No
   await repos.auditLogs.create({ actorUserId: null, action: "nomination.qualified", entityType: "nomination", entityId: nomination.id, metadata: summary });
   queueDiscordNotification(context, { kind: "nomination_qualified", nomination, summary });
   if (settings.publishingWorkflow === "auto_send_when_qualified") {
-    await sendQualifiedNomination(context, nomination.id, null);
+    try {
+      await sendQualifiedNomination(context, nomination.id, null);
+    } catch (error) {
+      console.warn("Automatic publishing failed", error);
+    }
   }
 }
 

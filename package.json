@@ -1,6 +1,7 @@
 {
   "name": "plurmurate",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "CLOUDFLARE_ENV=staging react-router dev",

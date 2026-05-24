@@ -95,7 +95,48 @@ export async function sendQualifiedNomination(context: AppLoadContext, nominatio
   }
 }
 
+export async function markNominationSentManually(context: AppLoadContext, nominationId: string, actor: CurrentUser, decisionRationale?: string, publishedUrl?: string) {
+  requirePermission(actor.roles, "nomination:send");
+  const repos = getRepositories(context.cloudflare.env);
+  const nomination = await repos.nominations.findById(nominationId);
+  if (!nomination) throw new Response("Not found", { status: 404 });
+  if (["sent", "withdrawn"].includes(nomination.status)) throw new Response("Nomination is not sendable", { status: 400 });
+  const settings = await getSettings(context);
+  await repos.publishAttempts.create({
+    nominationId,
+    workflow: settings.publishingWorkflow,
+    actorUserId: actor.id,
+    xOperation: "manual",
+    requestJson: { manual: true, publishedUrl: cleanPublishedUrl(publishedUrl) },
+    responseJson: { manual: true, publishedUrl: cleanPublishedUrl(publishedUrl) },
+    status: "success",
+  });
+  await repos.nominations.updateStatus(nominationId, "sent", {
+    sentAt: new Date().toISOString(),
+    publishedTweetUrl: cleanPublishedUrl(publishedUrl),
+    decisionRationale: cleanDecisionRationale(decisionRationale),
+  });
+  await repos.auditLogs.create({
+    actorUserId: actor.id,
+    action: "nomination.sent_manually",
+    entityType: "nomination",
+    entityId: nominationId,
+    metadata: { decisionRationale: cleanDecisionRationale(decisionRationale), publishedUrl: cleanPublishedUrl(publishedUrl) },
+  });
+}
+
+export function isXCreditsDepletedError(error: unknown) {
+  if (!(error instanceof Error)) return false;
+  return error.message.includes("CreditsDepleted") || error.message.includes("does not have any credits");
+}
+
 function cleanDecisionRationale(value: string | undefined) {
   const trimmed = value?.trim() ?? "";
   return trimmed ? trimmed.slice(0, 500) : null;
+}
+
+function cleanPublishedUrl(value: string | undefined) {
+  const trimmed = value?.trim() ?? "";
+  if (!trimmed) return null;
+  return /^https?:\/\//i.test(trimmed) ? trimmed.slice(0, 500) : null;
 }

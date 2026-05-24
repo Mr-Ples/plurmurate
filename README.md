@@ -13,6 +13,8 @@ Plurmurate is a community nomination and voting tool for deciding what a shared 
 
 Create two separate X developer apps with the **Create App** button.
 
+Automated sending uses paid X API write requests. Budget at least `$0.015` per post; any post containing a URL is taxed at `$0.20` per post for automated sending. If the X developer account runs out of credits, use the host controls to mark a nomination as sent manually after posting it yourself.
+
 Name them `plurmurate-staging` and `plurmurate-production` for example.
 - `plurmurate-staging`: used for local development and staging.
 - `plurmurate-production`: used for the live production deployment.

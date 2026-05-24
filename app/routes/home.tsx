@@ -12,12 +12,13 @@ import { createNomination, moderateNomination } from "~/services/nomination-serv
 import { storeNominationImage } from "~/services/media-service";
 import { hydrateMissingTargetTweets } from "~/services/external-tweet-service";
 import { evaluateNomination, evaluatePendingNominations } from "~/services/approval-service";
-import { sendQualifiedNomination } from "~/services/publishing-service";
+import { isXCreditsDepletedError, markNominationSentManually, sendQualifiedNomination } from "~/services/publishing-service";
 
 export async function loader({ request, context }: any) {
   const user = await getCurrentUser(request, context);
   const repos = getRepositories(context.cloudflare.env);
   const settings = await getSettings(context);
+  const url = new URL(request.url);
   await evaluatePendingNominations(context);
   const users = await repos.users.listUsers();
   const host = users.find((candidate) => candidate.xUserId === settings.hostUserId || candidate.username?.toLowerCase() === settings.hostHandle.toLowerCase()) ?? null;
@@ -40,6 +41,7 @@ export async function loader({ request, context }: any) {
       }
       : null,
     nominations,
+    publishError: url.searchParams.get("publishError"),
   };
 }
 
@@ -52,7 +54,16 @@ export async function action({ request, context }: any) {
     return null;
   }
   if (formData.get("_intent") === "send") {
-    await sendQualifiedNomination(context, String(formData.get("nominationId")), user, String(formData.get("decisionRationale") ?? ""));
+    try {
+      await sendQualifiedNomination(context, String(formData.get("nominationId")), user, String(formData.get("decisionRationale") ?? ""));
+      return null;
+    } catch (error) {
+      if (isXCreditsDepletedError(error)) return redirect("/?publishError=credits");
+      throw error;
+    }
+  }
+  if (formData.get("_intent") === "sent_manually") {
+    await markNominationSentManually(context, String(formData.get("nominationId")), user, String(formData.get("decisionRationale") ?? ""), String(formData.get("publishedTweetUrl") ?? ""));
     return null;
   }
   if (["deny", "archive"].includes(String(formData.get("_intent")))) {
@@ -69,7 +80,7 @@ export async function action({ request, context }: any) {
 }
 
 export default function Home() {
-  const { user, settings, nominations, host } = useLoaderData<typeof loader>();
+  const { user, settings, nominations, host, publishError } = useLoaderData<typeof loader>();
   const [filters, setFilters] = useState({ status: "", type: "", search: "", sort: "newest" });
   const statusOptions = [
     { value: "", label: "All" },
@@ -164,6 +175,7 @@ export default function Home() {
           </div>
         </section>
         <section className="grid gap-3.5">
+          {publishError === "credits" ? <PublishErrorBanner /> : null}
           <NewNominationForm user={user} settings={settings} />
           <div className="flex items-center gap-3 py-1  px-6 opacity-50 " aria-hidden="true">
             <span className="h-px flex-1 bg-[#1f242129] my-4" />
@@ -172,6 +184,14 @@ export default function Home() {
         </section>
       </main>
     </AppShell>
+  );
+}
+
+function PublishErrorBanner() {
+  return (
+    <div className="rounded-md border border-[#8b343466] bg-[#fff1ed] px-4 py-3 text-sm text-[#8b3434]">
+      X rejected the publish request because the host account is out of API credits. Add funds or credits to the X developer account, then try again, or use Sent manually after posting it yourself.
+    </div>
   );
 }
 
