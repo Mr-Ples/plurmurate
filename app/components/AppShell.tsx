@@ -29,7 +29,10 @@ export function AppShell({ user, children }: { user: CurrentUser | null; childre
   return (
     <div className="mx-auto w-full max-w-[1120px] px-3.5">
       <header className="flex items-center justify-between gap-3.5 border-b border-[#1f242129] py-[22px] pb-3">
-        <Link className="shrink-0 font-serif text-[1.4rem]" to="/">Plurmurate</Link>
+        <Link className="inline-flex shrink-0 items-center gap-2 font-serif text-[1.4rem]" to="/">
+          <img className="h-6 w-6 rounded-sm" src="/favicon-32x32.png" alt="" aria-hidden="true" />
+          <span>Plurmurate</span>
+        </Link>
         <nav className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-3.5 text-[#6e716b]">
           {repoUrl ? (
             <a
