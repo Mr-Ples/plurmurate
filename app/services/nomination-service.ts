@@ -8,7 +8,7 @@ import { fetchAndCacheExternalTweet } from "./external-tweet-service";
 import { getSettings } from "./settings-service";
 import { queueDiscordNotification } from "./discord-service";
 
-export async function createNomination(context: AppLoadContext, actor: CurrentUser, formData: FormData) {
+export async function createNomination(context: AppLoadContext, actor: CurrentUser, formData: FormData, appOrigin?: string | null) {
   requirePermission(actor.roles, "nomination:create");
   const settings = await getSettings(context);
   const parsed = nominationFormSchema.parse(Object.fromEntries(formData));
@@ -28,7 +28,7 @@ export async function createNomination(context: AppLoadContext, actor: CurrentUs
     rationale: parsed.rationale || null,
   });
   await repos.auditLogs.create({ actorUserId: actor.id, action: "nomination.create", entityType: "nomination", entityId: nomination.id, metadata: { type: nomination.type } });
-  queueDiscordNotification(context, { kind: "new_nomination", nomination, actor });
+  queueDiscordNotification(context, { kind: "new_nomination", nomination, actor, appOrigin });
   if (target) {
     await fetchAndCacheExternalTweet(context, target.tweetId, target.url).catch(() => null);
   }

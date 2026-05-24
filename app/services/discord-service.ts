@@ -15,11 +15,13 @@ type DiscordNotification =
       kind: "new_nomination";
       nomination: Nomination;
       actor: CurrentUser;
+      appOrigin?: string | null;
     }
   | {
       kind: "nomination_qualified";
       nomination: Nomination;
       summary: VoteSummary;
+      appOrigin?: string | null;
     }
   | {
       kind: "nomination_sent";
@@ -27,6 +29,7 @@ type DiscordNotification =
       actor: CurrentUser | null;
       publishedUrl?: string | null;
       manual: boolean;
+      appOrigin?: string | null;
     };
 
 export async function sendDiscordTestMessage(context: AppLoadContext) {
@@ -48,26 +51,36 @@ export function queueDiscordNotification(context: AppLoadContext, notification: 
 
 async function reserveAndSendDiscordNotification(context: AppLoadContext, notification: DiscordNotification) {
   const repos = getRepositories(context.cloudflare.env);
-  const notificationId = await repos.discordNotifications.reserve({
-    kind: notification.kind,
-    entityType: "nomination",
-    entityId: notification.nomination.id,
-  });
-  if (!notificationId) return;
+  let notificationId: string | null = null;
+  try {
+    notificationId = await repos.discordNotifications.reserve({
+      kind: notification.kind,
+      entityType: "nomination",
+      entityId: notification.nomination.id,
+    });
+    if (!notificationId) return;
+  } catch (error) {
+    console.warn("Discord notification tracking unavailable; sending without reservation", error);
+  }
 
   try {
-    await sendDiscordNotification(context.cloudflare.env, notification);
-    await repos.discordNotifications.markSent(notificationId);
+    const nominator = notification.kind === "new_nomination"
+      ? notification.actor
+      : (await repos.users.listUsers()).find((user) => user.id === notification.nomination.creatorUserId) ?? null;
+    await sendDiscordNotification(context.cloudflare.env, notification, nominator);
+    if (notificationId) await repos.discordNotifications.markSent(notificationId);
   } catch (error) {
-    await repos.discordNotifications.markFailed(notificationId, error).catch((markError) => {
-      console.warn("Discord notification failure tracking failed", markError);
-    });
+    if (notificationId) {
+      await repos.discordNotifications.markFailed(notificationId, error).catch((markError) => {
+        console.warn("Discord notification failure tracking failed", markError);
+      });
+    }
     console.warn("Discord notification failed", error);
   }
 }
 
-async function sendDiscordNotification(env: DiscordEnv, notification: DiscordNotification) {
-  return sendDiscordMessage(env, buildDiscordMessage(env, notification));
+async function sendDiscordNotification(env: DiscordEnv, notification: DiscordNotification, nominator: CurrentUser | null) {
+  return sendDiscordMessage(env, buildDiscordMessage(env, notification, nominator));
 }
 
 async function sendDiscordMessage(env: DiscordEnv, message: unknown) {
@@ -85,7 +98,7 @@ async function sendDiscordMessage(env: DiscordEnv, message: unknown) {
   }
 }
 
-function buildDiscordMessage(env: DiscordEnv, notification: DiscordNotification) {
+function buildDiscordMessage(env: DiscordEnv, notification: DiscordNotification, nominator: CurrentUser | null) {
   const nomination = notification.nomination;
   const title = notification.kind === "new_nomination" ? "New nomination" : notification.kind === "nomination_qualified" ? "Nomination qualified" : "Nomination sent";
   const description = nomination.text || nomination.targetTweetUrl || nomination.rationale || "No text provided.";
@@ -94,17 +107,21 @@ function buildDiscordMessage(env: DiscordEnv, notification: DiscordNotification)
     { name: "Status", value: notification.kind === "new_nomination" ? nomination.status : notification.kind === "nomination_qualified" ? "qualified" : "sent", inline: true },
   ];
   const hostAccount = xAccountLink(env.X_HOST_HANDLE);
+  const nominationUrl = nominationDetailLink(notification.appOrigin, nomination.id);
+  if (nominationUrl) fields.push({ name: "Nomination", value: link("Open detail view", nominationUrl), inline: true });
+  if (nominator) {
+    const name = nominator.displayName || nominator.username || nominator.xUserId;
+    fields.push({ name: "Nominator", value: xAccountLink(nominator.username) ?? name, inline: true });
+  }
+  if (hostAccount) fields.push({ name: "Host account", value: hostAccount, inline: true });
 
-  if (notification.kind === "new_nomination") {
-    const name = notification.actor.displayName || notification.actor.username || notification.actor.xUserId;
-    fields.push({ name: "Submitted by", value: xAccountLink(notification.actor.username) ?? name, inline: true });
-  } else if (notification.kind === "nomination_qualified") {
+  if (notification.kind === "nomination_qualified") {
     fields.push(
       { name: "Votes", value: `A ${notification.summary.a} / B ${notification.summary.b} / U ${notification.summary.u}`, inline: true },
       { name: "Positive ratio", value: `${Math.round(notification.summary.positiveRatio * 100)}%`, inline: true },
       { name: "Margin", value: String(notification.summary.positiveMargin), inline: true },
     );
-  } else {
+  } else if (notification.kind === "nomination_sent") {
     fields.push({ name: "Method", value: notification.manual ? "Manual" : "Automatic", inline: true });
     if (notification.actor) {
       const name = notification.actor.displayName || notification.actor.username || notification.actor.xUserId;
@@ -113,7 +130,6 @@ function buildDiscordMessage(env: DiscordEnv, notification: DiscordNotification)
     if (notification.publishedUrl) fields.push({ name: "Published post", value: link("Open on X", notification.publishedUrl), inline: false });
   }
   if (nomination.targetTweetUrl) fields.push({ name: "Target post", value: link("Open target on X", nomination.targetTweetUrl), inline: false });
-  if (hostAccount) fields.push({ name: "Host account", value: hostAccount, inline: true });
 
   return {
     content: notification.kind === "new_nomination"
@@ -141,6 +157,12 @@ function xAccountLink(handle: string | null | undefined) {
   const cleanHandle = handle?.replace(/^@/, "").trim();
   if (!cleanHandle) return null;
   return link(`@${cleanHandle}`, `https://x.com/${cleanHandle}`);
+}
+
+function nominationDetailLink(appOrigin: string | null | undefined, nominationId: string) {
+  const cleanOrigin = appOrigin?.trim().replace(/\/+$/, "");
+  if (!cleanOrigin) return null;
+  return `${cleanOrigin}/nominations/${nominationId}`;
 }
 
 function link(label: string, url: string) {

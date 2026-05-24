@@ -42,18 +42,19 @@ export async function action({ request, context, params }: any) {
   const user = await getCurrentUser(request, context);
   if (!user) throw redirect("/login");
   const formData = await request.formData();
+  const appOrigin = new URL(request.url).origin;
   const intent = formData.get("_intent");
   if (intent === "vote") {
-    await voteOnNomination(context, user, formData);
+    await voteOnNomination(context, user, formData, appOrigin);
   } else if (intent === "send") {
     try {
-      await sendQualifiedNomination(context, String(formData.get("nominationId")), user, String(formData.get("decisionRationale") ?? ""));
+      await sendQualifiedNomination(context, String(formData.get("nominationId")), user, String(formData.get("decisionRationale") ?? ""), appOrigin);
     } catch (error) {
       if (isXCreditsDepletedError(error)) return redirect(`/nominations/${params.id}?publishError=credits`);
       throw error;
     }
   } else if (intent === "sent_manually") {
-    await markNominationSentManually(context, String(formData.get("nominationId")), user, String(formData.get("decisionRationale") ?? ""), String(formData.get("publishedTweetUrl") ?? ""));
+    await markNominationSentManually(context, String(formData.get("nominationId")), user, String(formData.get("decisionRationale") ?? ""), String(formData.get("publishedTweetUrl") ?? ""), appOrigin);
   } else if (["deny", "archive"].includes(String(intent))) {
     await moderateNomination(context, user, String(formData.get("nominationId")), String(intent), String(formData.get("decisionRationale") ?? ""));
   }

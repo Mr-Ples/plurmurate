@@ -13,15 +13,16 @@ export async function action({ request, context }: any) {
   const user = await getCurrentUser(request, context);
   if (!user) throw redirect("/login");
   const formData = await request.formData();
+  const appOrigin = new URL(request.url).origin;
   if (formData.get("_intent") === "vote") {
-    await voteOnNomination(context, user, formData);
+    await voteOnNomination(context, user, formData, appOrigin);
     return redirect("/");
   }
-  const nomination = await createNomination(context, user, formData);
+  const nomination = await createNomination(context, user, formData, appOrigin);
   const images = formData.getAll("image").filter((image: unknown): image is File => image instanceof File && image.size > 0).slice(0, 4);
   for (const image of images) {
-    await storeNominationImage(context, user, nomination.id, image, "nomination_image", new URL(request.url).origin);
+    await storeNominationImage(context, user, nomination.id, image, "nomination_image", appOrigin);
   }
-  await evaluateNomination(context, nomination);
+  await evaluateNomination(context, nomination, appOrigin);
   return redirect("/");
 }

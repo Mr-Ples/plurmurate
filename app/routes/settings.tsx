@@ -79,7 +79,7 @@ export async function action({ request, context }: any) {
     hostUserId: current.hostUserId,
     hostHandle: current.hostHandle,
   });
-  await evaluatePendingNominations(context);
+  await evaluatePendingNominations(context, new URL(request.url).origin);
 
   return redirect("/settings");
 }

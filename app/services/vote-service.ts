@@ -5,7 +5,7 @@ import { getRepositories } from "~/repositories/drizzle/repositories";
 import type { CurrentUser } from "~/repositories/interfaces";
 import { evaluateNomination } from "./approval-service";
 
-export async function voteOnNomination(context: AppLoadContext, actor: CurrentUser, formData: FormData) {
+export async function voteOnNomination(context: AppLoadContext, actor: CurrentUser, formData: FormData, appOrigin?: string | null) {
   requirePermission(actor.roles, "nomination:vote");
   const repos = getRepositories(context.cloudflare.env);
   const input = voteFormSchema.parse(Object.fromEntries(formData));
@@ -20,5 +20,5 @@ export async function voteOnNomination(context: AppLoadContext, actor: CurrentUs
   }
   await repos.votes.upsertVote({ nominationId: nomination.id, userId: actor.id, value: input.value, comment: input.comment ?? null });
   await repos.auditLogs.create({ actorUserId: actor.id, action: "vote.upsert", entityType: "nomination", entityId: nomination.id, metadata: { value: input.value } });
-  await evaluateNomination(context, nomination);
+  await evaluateNomination(context, nomination, appOrigin);
 }

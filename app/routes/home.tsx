@@ -51,13 +51,14 @@ export async function action({ request, context }: any) {
   const user = await getCurrentUser(request, context);
   if (!user) throw redirect("/login");
   const formData = await request.formData();
+  const appOrigin = new URL(request.url).origin;
   if (formData.get("_intent") === "vote") {
-    await voteOnNomination(context, user, formData);
+    await voteOnNomination(context, user, formData, appOrigin);
     return null;
   }
   if (formData.get("_intent") === "send") {
     try {
-      await sendQualifiedNomination(context, String(formData.get("nominationId")), user, String(formData.get("decisionRationale") ?? ""));
+      await sendQualifiedNomination(context, String(formData.get("nominationId")), user, String(formData.get("decisionRationale") ?? ""), appOrigin);
       return null;
     } catch (error) {
       if (isXCreditsDepletedError(error)) return redirect("/?publishError=credits");
@@ -65,19 +66,19 @@ export async function action({ request, context }: any) {
     }
   }
   if (formData.get("_intent") === "sent_manually") {
-    await markNominationSentManually(context, String(formData.get("nominationId")), user, String(formData.get("decisionRationale") ?? ""), String(formData.get("publishedTweetUrl") ?? ""));
+    await markNominationSentManually(context, String(formData.get("nominationId")), user, String(formData.get("decisionRationale") ?? ""), String(formData.get("publishedTweetUrl") ?? ""), appOrigin);
     return null;
   }
   if (["deny", "archive"].includes(String(formData.get("_intent")))) {
     await moderateNomination(context, user, String(formData.get("nominationId")), String(formData.get("_intent")), String(formData.get("decisionRationale") ?? ""));
     return null;
   }
-  const nomination = await createNomination(context, user, formData);
+  const nomination = await createNomination(context, user, formData, appOrigin);
   const images = formData.getAll("image").filter((image: unknown): image is File => image instanceof File && image.size > 0).slice(0, 4);
   for (const image of images) {
-    await storeNominationImage(context, user, nomination.id, image, "nomination_image", new URL(request.url).origin);
+    await storeNominationImage(context, user, nomination.id, image, "nomination_image", appOrigin);
   }
-  await evaluateNomination(context, nomination);
+  await evaluateNomination(context, nomination, appOrigin);
   return redirect("/");
 }
 

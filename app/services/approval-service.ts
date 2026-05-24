@@ -4,7 +4,7 @@ import { getRepositories } from "~/repositories/drizzle/repositories";
 import { getSettings } from "./settings-service";
 import { queueDiscordNotification } from "./discord-service";
 
-export async function evaluateNomination(context: AppLoadContext, nomination: Nomination) {
+export async function evaluateNomination(context: AppLoadContext, nomination: Nomination, appOrigin?: string | null) {
   if (nomination.status !== "pending") return;
   const repos = getRepositories(context.cloudflare.env);
   const settings = await getSettings(context);
@@ -18,14 +18,14 @@ export async function evaluateNomination(context: AppLoadContext, nomination: No
   const didQualify = await repos.nominations.qualifyPending(nomination.id, new Date().toISOString());
   if (!didQualify) return;
   await repos.auditLogs.create({ actorUserId: null, action: "nomination.qualified", entityType: "nomination", entityId: nomination.id, metadata: summary });
-  queueDiscordNotification(context, { kind: "nomination_qualified", nomination, summary });
+  queueDiscordNotification(context, { kind: "nomination_qualified", nomination, summary, appOrigin });
 }
 
-export async function evaluatePendingNominations(context: AppLoadContext) {
+export async function evaluatePendingNominations(context: AppLoadContext, appOrigin?: string | null) {
   const repos = getRepositories(context.cloudflare.env);
   const nominations = await repos.nominations.listFeed({ status: "pending" });
   for (const nomination of nominations) {
-    await evaluateNomination(context, nomination);
+    await evaluateNomination(context, nomination, appOrigin);
   }
 }
 

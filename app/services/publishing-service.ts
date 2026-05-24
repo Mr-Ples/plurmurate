@@ -32,7 +32,7 @@ export async function getPublishingAccessToken(context: AppLoadContext, hostUser
   return env.X_PUBLISHING_ACCESS_TOKEN || null;
 }
 
-export async function sendQualifiedNomination(context: AppLoadContext, nominationId: string, actor: CurrentUser | null, decisionRationale?: string) {
+export async function sendQualifiedNomination(context: AppLoadContext, nominationId: string, actor: CurrentUser | null, decisionRationale?: string, appOrigin?: string | null) {
   if (actor) requirePermission(actor.roles, "nomination:send");
   const env = context.cloudflare.env;
   const repos = getRepositories(env);
@@ -87,6 +87,7 @@ export async function sendQualifiedNomination(context: AppLoadContext, nominatio
       actor,
       publishedUrl: response.url ?? null,
       manual: false,
+      appOrigin,
     });
   } catch (error) {
     await repos.publishAttempts.create({
@@ -103,7 +104,7 @@ export async function sendQualifiedNomination(context: AppLoadContext, nominatio
   }
 }
 
-export async function markNominationSentManually(context: AppLoadContext, nominationId: string, actor: CurrentUser, decisionRationale?: string, publishedUrl?: string) {
+export async function markNominationSentManually(context: AppLoadContext, nominationId: string, actor: CurrentUser, decisionRationale?: string, publishedUrl?: string, appOrigin?: string | null) {
   requirePermission(actor.roles, "nomination:send");
   const repos = getRepositories(context.cloudflare.env);
   const nomination = await repos.nominations.findById(nominationId);
@@ -138,6 +139,7 @@ export async function markNominationSentManually(context: AppLoadContext, nomina
     actor,
     publishedUrl: cleanUrl,
     manual: true,
+    appOrigin,
   });
 }
 
