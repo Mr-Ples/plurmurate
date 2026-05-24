@@ -13,7 +13,24 @@ export async function bootstrapUserRoles(context: AppLoadContext, user: CurrentU
     for (const role of ["spectator", "voter", "admin"] as RoleName[]) {
       await repos.roles.assignRole({ userId: user.id, role, actorUserId: null, assignmentSource: "configured_host" });
     }
-  } else if (user.roles.length === 0) {
+  } else {
+    const settings = await getSettings(context);
+    if (settings.automaticRoleAssignmentEnabled) {
+      const username = normalizeUsername(user.username);
+      for (const entry of settings.automaticRoleWhitelist) {
+        if (username && normalizeUsername(entry.username) === username) {
+          await repos.roles.assignRole({ userId: user.id, role: entry.role, actorUserId: null, assignmentSource: "automatic_username" });
+        }
+      }
+      for (const rule of settings.automaticRoleRules) {
+        if (rule.subject === "followers" && rule.operator === "more_than" && user.followersCount > rule.value) {
+          await repos.roles.assignRole({ userId: user.id, role: rule.role, actorUserId: null, assignmentSource: "automatic_rule" });
+        }
+      }
+    }
+  }
+  const refreshed = (await repos.users.listUsers()).find((account) => account.id === user.id) ?? user;
+  if (refreshed.roles.length === 0) {
     await repos.roles.assignRole({ userId: user.id, role: "spectator", actorUserId: null, assignmentSource: "default" });
   }
 }
@@ -44,4 +61,8 @@ function isHostUser(user: CurrentUser, hostUserId: string, hostHandle: string) {
     (hostUserId && user.xUserId === hostUserId) ||
     (cleanHostHandle && user.username?.toLowerCase() === cleanHostHandle),
   );
+}
+
+function normalizeUsername(username: string | null | undefined) {
+  return username?.replace(/^@/, "").trim().toLowerCase() ?? "";
 }

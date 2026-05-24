@@ -1,12 +1,21 @@
-# Plurmurate
-**Note: this repo is mostly vibe coded so use ate your own risk lmao**
+<h1 align="center">Plurmurate</h1>
 
-| ![murmurate ghibli](./assets/murmurate-ghibli.png) | ![plurmurate-def](./assets/plurmurate-def.png) |
-| :---: | :---: |
+<p align="center">
+  <strong>This repo is mostly vibe coded so use ate your own risk lmao *</strong>
+  <br />
+</p>
 
-Plurmurate is a community nomination and voting tool for deciding what a shared X/Twitter account should post, quote, repost, or reply to. Users authenticate with X, submit proposed posts as nominations, and vote on nominations using the A/B/U rating system developed by [Defender](https://x.com/DefenderOfBasic):
+<p align="center">
+  <img src="./assets/logo.png" alt="Understand Anything — Turn any codebase into an interactive knowledge graph" width="500" />
+</p>
 
-![abu_rating](./assets/ABU.jpeg)
+<p align="center">
+Plurmurate is a community nomination and voting tool for deciding what a shared X/Twitter account should post, quote, repost, or reply to. Users authenticate with X, submit proposed posts as nominations, and vote on nominations using the A/B/U rating system developed by <a href="https://x.com/DefenderOfBasic">Defender</a>:
+</p>
+<p align="center">
+  <img src="./assets/ABU.jpeg" alt="Understand Anything — Turn any codebase into an interactive knowledge graph" width="400" />
+</p>
+
 # Roadmap
 
 1. Support polls and other post subtleties that are not covered by plain text/media, quote, repost, and reply nominations.

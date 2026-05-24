@@ -1,6 +1,7 @@
-import { ArrowLeft, Repeat2 } from "lucide-react";
+import { ArrowLeft, Info, Repeat2 } from "lucide-react";
 import { useState } from "react";
 import { Form, Link, redirect, useLoaderData, useLocation, useNavigate } from "react-router";
+import { AbuRatingDialog } from "~/components/AbuRatingDialog";
 import { AppShell } from "~/components/AppShell";
 import { TargetTweetCard } from "~/components/TargetTweetCard";
 import { nominationTypeLabel } from "~/domain/nominations";
@@ -17,6 +18,7 @@ const secondaryActionClass = `${buttonClass} border-[#1f242129] bg-white/45 text
 const decisionFieldClass = "min-h-[92px] w-full rounded-md border border-[#1f242129] bg-white/45 px-3 py-2.5 outline-none focus:border-[#526f8d]";
 const manualUrlClass = "min-h-[40px] w-full rounded-md border border-[#1f242129] bg-white/55 px-3 py-2.5 outline-none focus:border-[#526f8d]";
 const voteClass = "inline-flex h-10 min-w-[62px] cursor-pointer items-center justify-center gap-1.5 rounded-md border border-[#1f242129] bg-white/45 px-3 text-sm font-medium text-[#1f2421] hover:bg-[#fffcf4] disabled:cursor-not-allowed disabled:opacity-45";
+const voteInfoClass = "inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-[#1f242129] bg-white/45 text-[#6e716b] hover:border-[#1f24214d] hover:bg-[#fffcf4]";
 const activeVoteClass = "border-[#496d58] bg-[#dbeadf] text-[#1f2421] hover:bg-[#dbeadf]";
 const voteCommentClass = "h-10 min-w-[190px] flex-1 rounded-md border border-[#1f242129] bg-white/45 px-3 text-sm outline-none focus:border-[#526f8d] disabled:cursor-not-allowed disabled:opacity-45";
 
@@ -63,6 +65,7 @@ export default function NominationDetail() {
   const location = useLocation();
   const navigate = useNavigate();
   const [manualSendOpen, setManualSendOpen] = useState(false);
+  const [ratingInfoOpen, setRatingInfoOpen] = useState(false);
   const canVote = user?.roles.some((role) => ["voter", "admin"].includes(role)) && !["sent", "withdrawn"].includes(nomination.status);
   const canModerate = user?.roles.includes("admin");
   const canSend = ["qualified", "approved", "failed"].includes(nomination.status);
@@ -174,8 +177,12 @@ export default function NominationDetail() {
                     {!canVote && voteDisabledReason ? <VoteDisabledTip id={`${nomination.id}-${value}-detail-vote-disabled`} text={voteDisabledReason} /> : null}
                   </span>
                 ))}
+                <button className={voteInfoClass} type="button" onClick={() => setRatingInfoOpen(true)} aria-label="Show A/B/U rating explanation">
+                  <Info size={17} aria-hidden="true" />
+                </button>
               </div>
               <input className={voteCommentClass} name="comment" maxLength={400} placeholder="Optional vote comment" disabled={!canVote} />
+              {ratingInfoOpen ? <AbuRatingDialog onClose={() => setRatingInfoOpen(false)} /> : null}
             </Form>
             {decisionRationale}
             {publishedLink}

@@ -1,4 +1,4 @@
-import { Info, Send, X } from "lucide-react";
+import { Info, Plus, Send, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { Form, redirect, useLoaderData } from "react-router";
 import { AppShell } from "~/components/AppShell";
@@ -7,6 +7,7 @@ import { roleNames, type RoleName } from "~/domain/roles";
 import type { AppSettings } from "~/domain/settings";
 import { getCurrentUser } from "~/lib/auth/session";
 import { requirePermission } from "~/lib/permissions/permissions";
+import { newId } from "~/lib/utils/id";
 import { getRepositories } from "~/repositories/drizzle/repositories";
 import { sendDiscordTestMessage } from "~/services/discord-service";
 import { updateUserRole } from "~/services/role-service";
@@ -44,6 +45,13 @@ export async function action({ request, context }: any) {
     return redirect("/settings#roles");
   }
 
+  if (String(intent).startsWith("auto-role-")) {
+    requirePermission(user.roles, "settings:update");
+    const current = await getSettings(context);
+    await updateSettings(context, user, updateAutomaticRoleSettings(current, formData, String(intent)));
+    return redirect("/settings#automatic-role-assignment");
+  }
+
   if (intent === "discord-test") {
     requirePermission(user.roles, "settings:update");
     try {
@@ -67,7 +75,6 @@ export async function action({ request, context }: any) {
     publishingWorkflow: formData.get("publishingWorkflow"),
     includeTweetAvatarInPublishedMedia: formData.get("includeTweetAvatarInPublishedMedia") === "on",
     enabledNominationTypes,
-    automaticRoleAssignmentEnabled: formData.get("automaticRoleAssignmentEnabled") === "on",
     maxImageUploadBytes,
     hostUserId: current.hostUserId,
     hostHandle: current.hostHandle,
@@ -136,6 +143,97 @@ export default function Settings() {
           {roleInfoOpen ? <RoleInfoDialog onClose={() => setRoleInfoOpen(false)} /> : null}
         </section>
 
+        <section id="automatic-role-assignment" className={`${cardClass} grid gap-4 scroll-mt-6`}>
+          <div className="grid gap-1">
+            <SectionHeader title="Automatic Role Assignment" />
+            <p className="m-0 text-sm text-[#6e716b]">Roles configured here are added when a matching user logs in. Current automatic targets: {automaticRoleSummary(settings)}</p>
+          </div>
+          <Form method="post" className="grid gap-3 rounded-md border border-[#1f242114] bg-white/35 p-3">
+            <input type="hidden" name="_intent" value="auto-role-toggle" />
+            <Toggle name="automaticRoleAssignmentEnabled" defaultChecked={settings.automaticRoleAssignmentEnabled} title="Enable automatic assignments" info="When enabled, matching whitelist entries and rules add their configured roles during X login." />
+            <button className={`${buttonClass} w-fit`}>Save automatic assignment toggle</button>
+          </Form>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid content-start gap-3">
+              <h3 className="m-0 text-base font-medium">Username whitelist</h3>
+              <Form method="post" className="grid gap-2 rounded-md border border-[#1f242114] bg-white/35 p-3">
+                <input type="hidden" name="_intent" value="auto-role-whitelist-add" />
+                <label className={labelClass}>
+                  <LabelText text="Username" info="Use an X username with or without @. Matching is case-insensitive." />
+                  <input className={fieldClass} name="username" placeholder="DefenderOfBasic" />
+                </label>
+                <label className={labelClass}>
+                  <LabelText text="Role to add" info="The selected role is added when this username logs in." />
+                  <RoleSelect name="role" defaultValue="voter" />
+                </label>
+                <button className={`${buttonClass} inline-flex w-fit items-center gap-2`}>
+                  <Plus size={16} aria-hidden="true" />
+                  Add username
+                </button>
+              </Form>
+              <div className="grid gap-2">
+                {settings.automaticRoleWhitelist.length ? settings.automaticRoleWhitelist.map((entry) => (
+                  <Form method="post" key={`${entry.username}-${entry.role}`} className="flex items-center justify-between gap-2 rounded-md border border-[#1f242114] bg-white/35 px-3 py-2">
+                    <input type="hidden" name="_intent" value="auto-role-whitelist-remove" />
+                    <input type="hidden" name="username" value={entry.username} />
+                    <input type="hidden" name="role" value={entry.role} />
+                    <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-sm">@{entry.username} gets <strong>{entry.role}</strong></span>
+                    <button className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-[#1f242129] bg-white/45 text-[#6e716b] hover:border-[#8b343466] hover:text-[#8b3434]" type="submit" aria-label={`Remove @${entry.username} automatic ${entry.role} assignment`}>
+                      <Trash2 size={15} aria-hidden="true" />
+                    </button>
+                  </Form>
+                )) : <p className="m-0 text-sm text-[#6e716b]">No usernames configured.</p>}
+              </div>
+            </div>
+            <div className="grid content-start gap-3">
+              <h3 className="m-0 text-base font-medium">Rules</h3>
+              <Form method="post" className="grid gap-2 rounded-md border border-[#1f242114] bg-white/35 p-3">
+                <input type="hidden" name="_intent" value="auto-role-rule-add" />
+                <div className="grid gap-2 sm:grid-cols-[1fr_1fr]">
+                  <label className={labelClass}>
+                    <LabelText text="Metric" info="The account field checked during login." />
+                    <select className={fieldClass} name="subject" defaultValue="followers">
+                      <option value="followers">Followers</option>
+                    </select>
+                  </label>
+                  <label className={labelClass}>
+                    <LabelText text="Condition" info="The comparison used for the metric." />
+                    <select className={fieldClass} name="operator" defaultValue="more_than">
+                      <option value="more_than">More than</option>
+                    </select>
+                  </label>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-[1fr_1fr]">
+                  <label className={labelClass}>
+                    <LabelText text="Value" info="For example, 200 means users with more than 200 followers match." />
+                    <input className={fieldClass} name="value" type="number" min={0} defaultValue={200} />
+                  </label>
+                  <label className={labelClass}>
+                    <LabelText text="Role to add" info="The selected role is added when the rule matches." />
+                    <RoleSelect name="role" defaultValue="voter" />
+                  </label>
+                </div>
+                <button className={`${buttonClass} inline-flex w-fit items-center gap-2`}>
+                  <Plus size={16} aria-hidden="true" />
+                  Add rule
+                </button>
+              </Form>
+              <div className="grid gap-2">
+                {settings.automaticRoleRules.length ? settings.automaticRoleRules.map((rule) => (
+                  <Form method="post" key={rule.id} className="flex items-center justify-between gap-2 rounded-md border border-[#1f242114] bg-white/35 px-3 py-2">
+                    <input type="hidden" name="_intent" value="auto-role-rule-remove" />
+                    <input type="hidden" name="ruleId" value={rule.id} />
+                    <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-sm">{roleRuleSummary(rule)}</span>
+                    <button className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-[#1f242129] bg-white/45 text-[#6e716b] hover:border-[#8b343466] hover:text-[#8b3434]" type="submit" aria-label={`Remove automatic role rule ${roleRuleSummary(rule)}`}>
+                      <Trash2 size={15} aria-hidden="true" />
+                    </button>
+                  </Form>
+                )) : <p className="m-0 text-sm text-[#6e716b]">No rules configured.</p>}
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section id="discord" className={`${cardClass} grid gap-4 scroll-mt-6`}>
           <SectionHeader title="Discord" />
           <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
@@ -202,8 +300,7 @@ export default function Settings() {
               </label>
             </div>
             <div className="grid gap-2">
-              <Toggle name="includeTweetAvatarInPublishedMedia" defaultChecked={settings.includeTweetAvatarInPublishedMedia} title="Automatically nominator signature" info="Automatically upload nominator twitter avatar to nominated tweet as an image so people know it wasn't the host that sent the tweet." />
-              <Toggle name="automaticRoleAssignmentEnabled" defaultChecked={settings.automaticRoleAssignmentEnabled} title="Automatic role assignment" info="Assign default roles automatically when users sign in." />
+              <Toggle name="includeTweetAvatarInPublishedMedia" defaultChecked={settings.includeTweetAvatarInPublishedMedia} title="Automatically add nominator signature" info="Automatically upload nominator twitter avatar to nominated tweet as an image so people know it wasn't the host that sent the tweet." />
             </div>
           </section>
 
@@ -229,6 +326,70 @@ function optionalNumber(value: FormDataEntryValue | null) {
   if (value === null) return null;
   const trimmed = String(value).trim();
   return trimmed === "" ? null : Number(trimmed);
+}
+
+function updateAutomaticRoleSettings(current: AppSettings, formData: FormData, intent: string): AppSettings {
+  if (intent === "auto-role-toggle") {
+    return { ...current, automaticRoleAssignmentEnabled: formData.get("automaticRoleAssignmentEnabled") === "on" };
+  }
+
+  if (intent === "auto-role-whitelist-add") {
+    const username = cleanUsername(String(formData.get("username") ?? ""));
+    const role = String(formData.get("role")) as RoleName;
+    if (!username || !roleNames.includes(role)) return current;
+    const exists = current.automaticRoleWhitelist.some((entry) => cleanUsername(entry.username) === username && entry.role === role);
+    return exists ? current : {
+      ...current,
+      automaticRoleWhitelist: [...current.automaticRoleWhitelist, { username, role }],
+    };
+  }
+
+  if (intent === "auto-role-whitelist-remove") {
+    const username = cleanUsername(String(formData.get("username") ?? ""));
+    const role = String(formData.get("role")) as RoleName;
+    return {
+      ...current,
+      automaticRoleWhitelist: current.automaticRoleWhitelist.filter((entry) => !(cleanUsername(entry.username) === username && entry.role === role)),
+    };
+  }
+
+  if (intent === "auto-role-rule-add") {
+    const role = String(formData.get("role")) as RoleName;
+    const subject = String(formData.get("subject"));
+    const operator = String(formData.get("operator"));
+    const value = Math.max(0, Math.floor(Number(formData.get("value") ?? 0)));
+    if (!roleNames.includes(role) || subject !== "followers" || operator !== "more_than" || !Number.isFinite(value)) return current;
+    return {
+      ...current,
+      automaticRoleRules: [...current.automaticRoleRules, { id: newId("rar"), subject, operator, value, role }],
+    };
+  }
+
+  if (intent === "auto-role-rule-remove") {
+    const ruleId = String(formData.get("ruleId") ?? "");
+    return {
+      ...current,
+      automaticRoleRules: current.automaticRoleRules.filter((rule) => rule.id !== ruleId),
+    };
+  }
+
+  return current;
+}
+
+function cleanUsername(username: string) {
+  return username.replace(/^@/, "").trim().toLowerCase();
+}
+
+function automaticRoleSummary(settings: AppSettings) {
+  const assignments = [
+    ...settings.automaticRoleWhitelist.map((entry) => `@${entry.username} -> ${entry.role}`),
+    ...settings.automaticRoleRules.map(roleRuleSummary),
+  ];
+  return assignments.length ? assignments.join(", ") : "none";
+}
+
+function roleRuleSummary(rule: AppSettings["automaticRoleRules"][number]) {
+  return `followers more than ${rule.value} -> ${rule.role}`;
 }
 
 async function getPendingPublishingImpact(repos: ReturnType<typeof getRepositories>) {
@@ -301,6 +462,14 @@ function Toggle({ name, defaultChecked, title, info }: { name: string; defaultCh
       <LabelText text={title} info={info} />
       <input className="h-4 w-4 shrink-0" type="checkbox" name={name} defaultChecked={defaultChecked} />
     </label>
+  );
+}
+
+function RoleSelect({ name, defaultValue }: { name: string; defaultValue: RoleName }) {
+  return (
+    <select className={fieldClass} name={name} defaultValue={defaultValue}>
+      {roleNames.map((role) => <option key={role} value={role}>{role}</option>)}
+    </select>
   );
 }
 
