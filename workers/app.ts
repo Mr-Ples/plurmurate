@@ -25,6 +25,8 @@ export interface Env {
   X_HOST_USER_ID: string;
   X_HOST_HANDLE: string;
   X_PUBLISHING_ACCESS_TOKEN?: string;
+  DISCORD_BOT_TOKEN?: string;
+  DISCORD_CHANNEL_ID?: string;
   DB: D1Database;
   MEDIA_BUCKET: R2Bucket;
 }

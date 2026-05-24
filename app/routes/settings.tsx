@@ -1,10 +1,12 @@
-import { Info, X } from "lucide-react";
+import { Info, Send, X } from "lucide-react";
 import { Form, redirect, useLoaderData } from "react-router";
 import { AppShell } from "~/components/AppShell";
 import { nominationTypes } from "~/domain/nominations";
 import { roleNames, type RoleName } from "~/domain/roles";
 import { getCurrentUser } from "~/lib/auth/session";
+import { requirePermission } from "~/lib/permissions/permissions";
 import { getRepositories } from "~/repositories/drizzle/repositories";
+import { sendDiscordTestMessage } from "~/services/discord-service";
 import { updateUserRole } from "~/services/role-service";
 import { getSettings, updateSettings } from "~/services/settings-service";
 
@@ -16,11 +18,13 @@ const labelClass = "grid gap-1.5 text-sm font-medium";
 export async function loader({ request, context }: any) {
   const user = await getCurrentUser(request, context);
   const repos = getRepositories(context.cloudflare.env);
+  const url = new URL(request.url);
   return {
     user,
     settings: await getSettings(context),
     users: await repos.users.listUsers(),
     visibleNominationCount: (await repos.nominations.listFeed({ viewerUserId: user?.id })).length,
+    discordTest: url.searchParams.get("discordTest"),
   };
 }
 
@@ -34,6 +38,17 @@ export async function action({ request, context }: any) {
   if (intent === "role") {
     await updateUserRole(context, user, String(formData.get("userId")), String(formData.get("role")) as RoleName, formData.get("enabled") === "on");
     return redirect("/settings#roles");
+  }
+
+  if (intent === "discord-test") {
+    requirePermission(user.roles, "settings:update");
+    try {
+      const result = await sendDiscordTestMessage(context);
+      return redirect(`/settings?discordTest=${result.ok ? "sent" : "missing"}#discord`);
+    } catch (error) {
+      console.warn("Discord test message failed", error);
+      return redirect("/settings?discordTest=failed#discord");
+    }
   }
 
   const current = await getSettings(context);
@@ -64,7 +79,7 @@ export async function action({ request, context }: any) {
 }
 
 export default function Settings() {
-  const { user, settings, users, visibleNominationCount } = useLoaderData<typeof loader>();
+  const { user, settings, users, visibleNominationCount, discordTest } = useLoaderData<typeof loader>();
   const maxImageUploadMb = Math.max(1, Math.round(settings.maxImageUploadBytes / 1024 / 1024));
 
   return (
@@ -90,6 +105,23 @@ export default function Settings() {
             {users.map((account) => (
               <RoleEditor key={account.id} account={account} />
             ))}
+          </div>
+        </section>
+
+        <section id="discord" className={`${cardClass} grid gap-4 scroll-mt-6`}>
+          <SectionHeader title="Discord" />
+          <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
+            <div className="grid gap-1">
+              <p className="m-0 text-sm text-[#6e716b]">Send a test message to the configured Discord channel.</p>
+              {discordTest ? <p className={`m-0 text-sm font-medium ${discordTest === "sent" ? "text-[#315f45]" : "text-[#8b3434]"}`}>{discordTestMessage(discordTest)}</p> : null}
+            </div>
+            <Form method="post" className="m-0">
+              <input type="hidden" name="_intent" value="discord-test" />
+              <button className={`${buttonClass} inline-flex items-center gap-2`} type="submit">
+                <Send size={16} aria-hidden="true" />
+                Send test
+              </button>
+            </Form>
           </div>
         </section>
 
@@ -265,4 +297,10 @@ function nominationTypeInfo(type: (typeof nominationTypes)[number]) {
   if (type === "quote") return "Allow users to nominate a quote of an existing X post.";
   if (type === "repost") return "Allow users to nominate an existing X post for reposting.";
   return "Allow users to nominate a reply to an existing X post.";
+}
+
+function discordTestMessage(status: string) {
+  if (status === "sent") return "Test message sent.";
+  if (status === "missing") return "Set DISCORD_BOT_TOKEN and DISCORD_CHANNEL_ID before testing.";
+  return "Discord rejected the test message. Check the token, channel ID, and bot permissions.";
 }

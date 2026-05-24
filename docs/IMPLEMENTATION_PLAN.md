@@ -75,6 +75,7 @@ app/
     vote-service.ts
     role-service.ts
     publishing-service.ts
+    discord-service.ts
     settings-service.ts
   repositories/
     interfaces.ts
@@ -112,6 +113,8 @@ X_HOST_USER_ID
 X_HOST_HANDLE
 X_PUBLISHING_ACCESS_TOKEN
 X_PUBLISHING_REFRESH_TOKEN
+DISCORD_BOT_TOKEN
+DISCORD_CHANNEL_ID
 R2 bucket binding
 ```
 
@@ -121,6 +124,7 @@ Notes:
 - The host account is configuration, not code.
 - The connected host/publishing account should be manageable through settings once the basic app works.
 - Local development should use live X credentials and the live X client.
+- Discord notifications are optional; skip sending when the bot token or channel ID is missing.
 
 ## 5. Database Schema
 
@@ -427,8 +431,20 @@ When a nomination qualifies:
 
 - In manual mode, set status to `qualified` and show it in the publisher review queue.
 - In automatic mode, set status to `qualified`, then call `PublishingService.sendQualifiedNomination`.
+- Queue a Discord notification that the nomination is qualified and ready for review.
 
-## 10. X Client Interface
+## 10. Discord Service
+
+Use a small infrastructure service for Discord messages. It should:
+
+- Send a bot message to `POST /api/v10/channels/{DISCORD_CHANNEL_ID}/messages` using `DISCORD_BOT_TOKEN`.
+- Notify when a nomination is created.
+- Notify when a nomination transitions from `pending` to `qualified`.
+- Include nomination type, status, submitter for new nominations, and vote summary for qualified nominations.
+- Run through `ctx.waitUntil` and catch failures so Discord outages do not break nomination creation or voting.
+- Return without side effects when Discord configuration is incomplete.
+
+## 11. X Client Interface
 
 No application service should call `fetch` against X directly. Use:
 
@@ -453,7 +469,7 @@ Required live capabilities:
 - `users.read`, `tweet.read`, `tweet.write`, `media.write`, `offline.access`.
 - Optional `follows.read` later if follower/following rules are enabled.
 
-## 11. Publishing Service
+## 12. Publishing Service
 
 Publishing flow:
 
@@ -476,7 +492,7 @@ Reply limitation:
 - Reply/comment publishing may fail because of X self-serve reply restrictions.
 - The UI should warn publishers that not every external reply target is publishable.
 
-## 12. Media And Tweet Avatars
+## 13. Media And Tweet Avatars
 
 Launch behavior:
 
@@ -501,7 +517,7 @@ interface ObjectStorage {
 }
 ```
 
-## 13. Routes And Screens
+## 14. Routes And Screens
 
 Public/auth:
 
@@ -532,7 +548,7 @@ Route behavior:
 - Review queue shows qualified, failed, denied, and vetoed items relevant to publishers.
 - Settings pages enforce host/admin permissions server-side.
 
-## 14. UI Direction
+## 15. UI Direction
 
 Use a minimal, aesthetic, lightly impressionistic UI. The target is a quiet editorial tool with generative/poster-like nomination artifacts.
 
@@ -562,11 +578,11 @@ Interaction:
 - Use icons sparingly for utility actions. Prefer text or typographic controls where meaning matters.
 - Motion should be subtle: feed item reveal, vote count changes, and publishing state transitions.
 
-## 15. No Mocks Or Tests
+## 16. No Mocks Or Tests
 
 Do not add mocks or tests anywhere for any reason. This includes unit tests, integration tests, end-to-end tests, test fixtures, test runners, mock clients, mocked service layers, stubbed auth/session flows, fake X clients, fake repositories, and package scripts dedicated to testing.
 
-## 16. Build Phases
+## 17. Build Phases
 
 ### Phase 1: Scaffold And Foundation
 
@@ -608,6 +624,7 @@ Acceptance criteria:
 - One vote per user per nomination is enforced.
 - Approval service qualifies nominations based on settings.
 - Manual and automatic workflow branches are both reachable.
+- Discord messages are queued for new nominations and for nominations that become qualified.
 
 ### Phase 5: Publishing
 
@@ -636,10 +653,11 @@ Acceptance criteria:
 - D1 migrations apply in staging/production.
 - R2 binding works.
 - Secrets are documented.
+- Discord bot token and channel ID setup is documented.
 - Basic rate limits and audit logging are in place.
 - README has setup, local dev, migration, and deployment instructions.
 
-## 17. Commands To Add
+## 18. Commands To Add
 
 Suggested package scripts:
 
@@ -658,7 +676,7 @@ Suggested package scripts:
 
 Adjust command names to the final scaffold.
 
-## 18. External Documentation To Recheck During Build
+## 19. External Documentation To Recheck During Build
 
 - Cloudflare React Router Workers guide.
 - Cloudflare D1 docs.

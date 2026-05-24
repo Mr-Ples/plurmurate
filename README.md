@@ -38,6 +38,8 @@ Edit `.dev.vars.staging`:
 SESSION_SECRET=replace-with-at-least-32-random-characters
 X_CLIENT_ID=your-staging-x-oauth-client-id
 X_CLIENT_SECRET=your-staging-x-oauth-client-secret
+DISCORD_BOT_TOKEN=your-discord-bot-token
+DISCORD_CHANNEL_ID=your-discord-channel-id
 ```
 
 Edit `.dev.vars.production`:
@@ -46,7 +48,40 @@ Edit `.dev.vars.production`:
 SESSION_SECRET=replace-with-at-least-32-random-characters
 X_CLIENT_ID=your-production-x-oauth-client-id
 X_CLIENT_SECRET=your-production-x-oauth-client-secret
+DISCORD_BOT_TOKEN=your-discord-bot-token
+DISCORD_CHANNEL_ID=your-discord-channel-id
 ```
+
+## Discord Setup (Optional)
+
+1. Create a new Discord application here: https://discord.com/developers/applications
+2. Give it a nice name like `plurmurate-hostaccountname`.
+3. Add a nice description like `Nominate tweets to @accountname here: <insert url>`.
+4. Go to **General Information** and copy the **Application ID**. This is the value used as `client_id` in the invite URL (below).
+5. Go to the **Bot** tab, click **Reset Token**, and copy the token. Paste it into `DISCORD_BOT_TOKEN` in the `.dev.vars` files.
+6. Create a channel in the target Discord server. Copy the channel ID and paste it into `DISCORD_CHANNEL_ID` in the `.dev.vars` files.
+7. Invite the bot to the Discord server with an OAuth URL that includes the `bot` scope:
+
+```text
+https://discord.com/oauth2/authorize?client_id=YOUR_APPLICATION_ID&scope=bot%20applications.commands&permissions=18432
+```
+
+Replace `YOUR_APPLICATION_ID` with the Application ID from step 4.
+
+The `bot` scope is required to add the bot user to the server. `applications.commands` alone only installs commands and will not make the bot appear as a server member.
+
+The permission value above includes:
+
+  - View Channel
+  - Send Messages
+  - Embed Links
+
+Recommended if the channel has stricter moderation:
+
+- Read Message History is not required for sending, but is commonly included.
+- Make sure no channel-specific permission override denies View Channel, Send Messages, or Embed Links.
+
+If Discord says the installation type is unsupported, open the app's **Installation** settings and make sure **Guild Install** is enabled. You need **Manage Server** permission in the target Discord server to authorize the bot.
 
 ## App Setup
 
@@ -71,6 +106,7 @@ Edit `wrangler.jsonc`:
 
 - Set the `database_id` printed by `npx wrangler d1 create plurmurate`.
 - Set the host account vars `X_HOST_HANDLE` and `X_HOST_USER_ID` (find id here: https://twxpicker.com/user-id-finder)
+- Set `DISCORD_CHANNEL_ID` if Discord notifications should be enabled locally or in staging.
 
 Apply migrations to the local D1 database, then start the dev server:
 
@@ -98,6 +134,7 @@ npx wrangler r2 bucket create plurmurate-media-production
 
 Edit `wrangler.jsonc`:
 - Set the `database_id` printed by `npx wrangler d1 create plurmurate-production`.
+- Set `DISCORD_CHANNEL_ID` if Discord notifications should be enabled in production.
 
 Upload production secrets:
 
@@ -147,4 +184,3 @@ Apply production migrations and deploy:
 npm run db:migrate:production:remote
 npm run deploy:production
 ```
-

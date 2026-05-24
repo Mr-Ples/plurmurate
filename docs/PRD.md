@@ -14,6 +14,7 @@ The product must support both automatic publishing and manual publisher-reviewed
 - Treat `A` and `B` as positive votes and `U` as a negative vote for initial approval logic.
 - Let publishers, hosts, or admins approve, veto, send, deny, or archive nominations.
 - Support text posts, image uploads, quote-tweet nominations, repost nominations, and reply/comment nominations.
+- Notify a configured Discord server when nominations are submitted and when nominations qualify for review.
 - Keep database access behind a generic interface so local, staging, and production persistence can change with minimal application code changes.
 - Deploy on Cloudflare.
 
@@ -244,7 +245,27 @@ Each feed item should show:
 - User's current vote, if any.
 - Publisher, host, or admin actions when authorized.
 
-## 10. Authentication And Authorization
+## 10. Discord Notifications
+
+The app should optionally send Discord bot messages to a configured server channel for operational visibility.
+
+Notification events:
+
+- A new nomination is submitted and enters `pending` status.
+- A nomination transitions from `pending` to `qualified`, making it ready for publisher review.
+
+Configuration:
+
+- `DISCORD_BOT_TOKEN` stores the Discord bot token as a secret.
+- `DISCORD_CHANNEL_ID` identifies the Discord channel that receives messages.
+
+Behavior:
+
+- Discord delivery must not block or fail nomination creation, voting, or qualification.
+- Notifications should include the nomination type, status, submitter for new nominations, and vote summary for qualified nominations.
+- If Discord configuration is incomplete, the app should silently skip Discord notifications.
+
+## 11. Authentication And Authorization
 
 Authentication:
 
@@ -269,7 +290,7 @@ settings:update -> host, admin
 roles:update -> host, admin
 ```
 
-## 11. Role Assignment
+## 12. Role Assignment
 
 Roles must be manageable manually and assignable automatically through settings.
 
@@ -302,7 +323,7 @@ Bulk role tools:
 - Remove automatically assigned roles when users no longer meet criteria, if that setting is enabled.
 - Preserve manually assigned admin, host, and publisher roles unless explicitly changed by a host/admin.
 
-## 12. Media Uploads
+## 13. Media Uploads
 
 Users should be able to attach an image to eligible nomination types.
 
@@ -320,7 +341,7 @@ Initial constraints:
 - JPEG, PNG, and WebP.
 - Configurable max size, for example `5 MB`.
 
-## 13. Nomination Tweet Avatars
+## 14. Nomination Tweet Avatars
 
 A nomination can include a tweet avatar image that visually identifies the proposed author/persona of the nominated tweet. This is separate from the X profile name and avatar of the user who submitted, voted on, moderated, or administered the nomination.
 
@@ -353,7 +374,7 @@ Open design question:
 
 - If both a nomination image and tweet avatar are published, the app needs a composition step. Options include posting multiple media attachments where X allows it, or generating a single combined image with the tweet avatar placed in a consistent corner/header/footer.
 
-## 14. External X Post Links
+## 15. External X Post Links
 
 The app should parse and validate X post URLs for:
 
@@ -371,7 +392,7 @@ Store:
 
 Do not make posting depend on fragile URL string parsing alone. Store the parsed tweet ID separately.
 
-## 15. Publishing Workflows
+## 16. Publishing Workflows
 
 The product must support two complete publishing workflows. Hosts and administrators should be able to switch between them in settings.
 
@@ -405,7 +426,7 @@ Workflow setting options:
 
 The setting should be deployment-level and editable by hosts/admins. A fork should be able to choose its own workflow without code changes.
 
-## 16. X API Requirements
+## 17. X API Requirements
 
 Current recommendation: use X API v2 on the documented pay-per-use credit model. The app does not require Enterprise-only streaming, firehose, or analytics features for the planned product.
 
@@ -448,7 +469,7 @@ Implementation rule:
 - Build the publishing layer behind an `XClient` interface with only the live X API implementation. The rest of the app should not call X endpoints directly.
 - Do not use mocks, mock clients, mocked data flows, stubbed behavior, test implementations, or test suites anywhere in the product for any reason.
 
-## 17. Technical Architecture
+## 18. Technical Architecture
 
 Recommended stack for Cloudflare deployment:
 
@@ -471,7 +492,7 @@ UI components
         -> database adapter
 ```
 
-## 18. Database Interface
+## 19. Database Interface
 
 Create repository interfaces around domain operations rather than exposing database-specific queries throughout the app.
 
@@ -506,7 +527,7 @@ Database-specific adapters can then implement the same interfaces:
 
 Keep migrations explicit and versioned. Even with a generic interface, schema changes still need careful migration planning per database.
 
-## 19. Suggested Data Model
+## 20. Suggested Data Model
 
 Core tables/entities:
 
@@ -532,7 +553,7 @@ Key constraints:
 - Publish attempts belong to one nomination.
 - Role updates and moderation actions are audit logged.
 
-## 20. Settings
+## 21. Settings
 
 Settings should be editable by hosts and administrators and read by the approval service.
 
@@ -559,7 +580,7 @@ Suggested settings:
 
 Settings should have validation and defaults. The app should continue working if a setting is missing.
 
-## 21. UI Direction
+## 22. UI Direction
 
 The UI should feel aesthetic, minimal, and lightly impressionistic while staying operational. The product should feel like a quiet editorial tool for collective posting, not a generic dashboard and not a marketing page.
 
@@ -599,7 +620,7 @@ Primary screens:
 - Tweet avatar upload/picker screen.
 - User profile / own nominations.
 
-## 22. Deployment Plan
+## 23. Deployment Plan
 
 Recommended environments:
 
@@ -617,6 +638,7 @@ Environment-specific configuration:
 - R2 bucket name and credentials/bindings.
 - Session secret.
 - Base URL.
+- Discord bot token and notification channel ID, when Discord notifications are enabled.
 
 Cloudflare resources likely needed:
 
@@ -633,7 +655,7 @@ Forkability requirements:
 - The code should not hard-code a specific host account, display name, X account, voting threshold, or publishing workflow.
 - Each fork should be able to run with its own OAuth app, connected publishing account, role rules, database, R2 bucket, and criteria.
 
-## 23. Risks And Open Questions
+## 24. Risks And Open Questions
 
 ### X API Access
 
@@ -669,7 +691,7 @@ Reply/comment nominations and external tweet previews may increase API calls. Ca
 
 Follower counts and other external account metadata may be stale, unavailable, rate limited, or expensive to fetch. Role rules should record when they were evaluated and whether the value came from live data or cached data.
 
-## 24. Build Scope And Sequence
+## 25. Build Scope And Sequence
 
 The whole product should be implemented, including both publishing workflows. The sequence below is for reducing integration risk, not for cutting scope.
 
@@ -683,6 +705,7 @@ Foundation:
 - Optional voter comments.
 - Configurable minimum votes, positive ratio, and positive margin.
 - Configurable automatic publishing and manual publisher-review workflows.
+- Discord notifications for new and qualified nominations.
 - Publisher approval/deny/veto/send actions.
 - Real send workflow for supported X API actions.
 - Nomination tweet avatar upload.
@@ -711,7 +734,7 @@ Hardening and production readiness:
 - Advanced moderation and anti-abuse controls.
 - Image composition for combining nomination media and tweet avatars.
 
-## 25. Decision Checklist
+## 26. Decision Checklist
 
 - What should `A` and `B` and `U` mean?
   Decision: use the A/B/U rating system designed by defender on X/Twitter.
