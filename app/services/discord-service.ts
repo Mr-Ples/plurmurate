@@ -1,6 +1,7 @@
 import type { AppLoadContext } from "react-router";
 import { nominationTypeLabel, type Nomination } from "~/domain/nominations";
 import type { VoteSummary } from "~/domain/votes";
+import { getRepositories } from "~/repositories/drizzle/repositories";
 import type { CurrentUser } from "~/repositories/interfaces";
 
 type DiscordEnv = {
@@ -33,10 +34,28 @@ export async function sendDiscordTestMessage(context: AppLoadContext) {
 }
 
 export function queueDiscordNotification(context: AppLoadContext, notification: DiscordNotification) {
-  const promise = sendDiscordNotification(context.cloudflare.env, notification).catch((error) => {
-    console.warn("Discord notification failed", error);
-  });
+  const promise = reserveAndSendDiscordNotification(context, notification);
   context.cloudflare.ctx.waitUntil(promise);
+}
+
+async function reserveAndSendDiscordNotification(context: AppLoadContext, notification: DiscordNotification) {
+  const repos = getRepositories(context.cloudflare.env);
+  const notificationId = await repos.discordNotifications.reserve({
+    kind: notification.kind,
+    entityType: "nomination",
+    entityId: notification.nomination.id,
+  });
+  if (!notificationId) return;
+
+  try {
+    await sendDiscordNotification(context.cloudflare.env, notification);
+    await repos.discordNotifications.markSent(notificationId);
+  } catch (error) {
+    await repos.discordNotifications.markFailed(notificationId, error).catch((markError) => {
+      console.warn("Discord notification failure tracking failed", markError);
+    });
+    console.warn("Discord notification failed", error);
+  }
 }
 
 async function sendDiscordNotification(env: DiscordEnv, notification: DiscordNotification) {

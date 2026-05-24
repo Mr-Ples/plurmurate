@@ -76,6 +76,7 @@ export interface NominationRepository {
     status?: string | null;
     type?: string | null;
   }): Promise<FeedNomination[]>;
+  qualifyPending(id: string, qualifiedAt: string): Promise<boolean>;
   updateStatus(id: string, status: NominationStatus, fields?: Partial<Nomination>): Promise<void>;
   attachMedia(id: string, field: "tweetAvatarMediaId" | "nominationMediaId", mediaId: string): Promise<void>;
 }
@@ -141,6 +142,16 @@ export interface PublishAttemptRepository {
   }): Promise<void>;
 }
 
+export interface DiscordNotificationRepository {
+  reserve(input: {
+    kind: "new_nomination" | "nomination_qualified";
+    entityType: "nomination";
+    entityId: string;
+  }): Promise<string | null>;
+  markSent(id: string): Promise<void>;
+  markFailed(id: string, error: unknown): Promise<void>;
+}
+
 export interface AuditLogRepository {
   create(input: {
     actorUserId: string | null;
@@ -161,5 +172,6 @@ export interface Repositories {
   settings: SettingsRepository;
   media: MediaRepository;
   publishAttempts: PublishAttemptRepository;
+  discordNotifications: DiscordNotificationRepository;
   auditLogs: AuditLogRepository;
 }

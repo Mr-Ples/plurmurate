@@ -16,7 +16,8 @@ export async function evaluateNomination(context: AppLoadContext, nomination: No
     thresholdPasses(summary.positiveRatio, settings.minimumPositiveRatio) &&
     thresholdPasses(summary.positiveMargin, settings.minimumPositiveMargin);
   if (!qualifies) return;
-  await repos.nominations.updateStatus(nomination.id, "qualified", { qualifiedAt: new Date().toISOString() });
+  const didQualify = await repos.nominations.qualifyPending(nomination.id, new Date().toISOString());
+  if (!didQualify) return;
   await repos.auditLogs.create({ actorUserId: null, action: "nomination.qualified", entityType: "nomination", entityId: nomination.id, metadata: summary });
   queueDiscordNotification(context, { kind: "nomination_qualified", nomination, summary });
   if (settings.publishingWorkflow === "auto_send_when_qualified") {

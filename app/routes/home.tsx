@@ -11,7 +11,7 @@ import { voteOnNomination } from "~/services/vote-service";
 import { createNomination, moderateNomination } from "~/services/nomination-service";
 import { storeNominationImage } from "~/services/media-service";
 import { hydrateMissingTargetTweets } from "~/services/external-tweet-service";
-import { evaluateNomination, evaluatePendingNominations } from "~/services/approval-service";
+import { evaluateNomination } from "~/services/approval-service";
 import { isXCreditsDepletedError, markNominationSentManually, sendQualifiedNomination } from "~/services/publishing-service";
 
 export async function loader({ request, context }: any) {
@@ -19,7 +19,6 @@ export async function loader({ request, context }: any) {
   const repos = getRepositories(context.cloudflare.env);
   const settings = await getSettings(context);
   const url = new URL(request.url);
-  await evaluatePendingNominations(context);
   const users = await repos.users.listUsers();
   const host = users.find((candidate) => candidate.xUserId === settings.hostUserId || candidate.username?.toLowerCase() === settings.hostHandle.toLowerCase()) ?? null;
   let nominations = await repos.nominations.listFeed({

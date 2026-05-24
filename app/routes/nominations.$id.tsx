@@ -6,7 +6,6 @@ import { TargetTweetCard } from "~/components/TargetTweetCard";
 import { nominationTypeLabel } from "~/domain/nominations";
 import { getCurrentUser } from "~/lib/auth/session";
 import { getRepositories } from "~/repositories/drizzle/repositories";
-import { evaluatePendingNominations } from "~/services/approval-service";
 import { hydrateMissingTargetTweets } from "~/services/external-tweet-service";
 import { moderateNomination } from "~/services/nomination-service";
 import { isXCreditsDepletedError, markNominationSentManually, sendQualifiedNomination } from "~/services/publishing-service";
@@ -25,7 +24,6 @@ export async function loader({ request, context, params }: any) {
   const user = await getCurrentUser(request, context);
   const repos = getRepositories(context.cloudflare.env);
   const url = new URL(request.url);
-  await evaluatePendingNominations(context);
   let nominations = await repos.nominations.listFeed({ viewerUserId: user?.id });
   let nomination = nominations.find((item) => item.id === params.id);
   if (!nomination) throw new Response("Not found", { status: 404 });

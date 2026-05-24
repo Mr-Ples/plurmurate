@@ -8,6 +8,7 @@ import { newId } from "~/lib/utils/id";
 import type { Repositories } from "../interfaces";
 import {
   auditLogs,
+  discordNotifications,
   externalTweets,
   mediaAssets,
   nominations,
@@ -294,6 +295,18 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
           }),
         );
       },
+      async qualifyPending(id, qualifiedAt) {
+        const result = await db
+          .update(nominations)
+          .set({
+            status: "qualified",
+            qualifiedAt,
+            updatedAt: new Date().toISOString(),
+          })
+          .where(and(eq(nominations.id, id), eq(nominations.status, "pending")))
+          .run();
+        return Number((result as { meta?: { changes?: number } }).meta?.changes ?? 0) > 0;
+      },
       async updateStatus(id, status, fields = {}) {
         await db
           .update(nominations)
@@ -442,6 +455,40 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
             errorMessage: input.errorMessage ?? null,
             createdAt: new Date().toISOString(),
           })
+          .run();
+      },
+    },
+    discordNotifications: {
+      async reserve(input) {
+        const id = newId("dnt");
+        const result = await db
+          .insert(discordNotifications)
+          .values({
+            id,
+            kind: input.kind,
+            entityType: input.entityType,
+            entityId: input.entityId,
+            createdAt: new Date().toISOString(),
+          })
+          .onConflictDoNothing()
+          .run();
+        return Number((result as { meta?: { changes?: number } }).meta?.changes ?? 0) > 0 ? id : null;
+      },
+      async markSent(id) {
+        await db
+          .update(discordNotifications)
+          .set({ sentAt: new Date().toISOString(), failedAt: null, errorMessage: null })
+          .where(eq(discordNotifications.id, id))
+          .run();
+      },
+      async markFailed(id, error) {
+        await db
+          .update(discordNotifications)
+          .set({
+            failedAt: new Date().toISOString(),
+            errorMessage: error instanceof Error ? error.message : String(error),
+          })
+          .where(eq(discordNotifications.id, id))
           .run();
       },
     },

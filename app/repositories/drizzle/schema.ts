@@ -145,6 +145,23 @@ export const publishAttempts = sqliteTable("publish_attempts", {
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
+export const discordNotifications = sqliteTable(
+  "discord_notifications",
+  {
+    id: text("id").primaryKey(),
+    kind: text("kind").notNull(),
+    entityType: text("entity_type").notNull(),
+    entityId: text("entity_id").notNull(),
+    createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+    sentAt: text("sent_at"),
+    failedAt: text("failed_at"),
+    errorMessage: text("error_message"),
+  },
+  (table) => ({
+    entityKindUnique: uniqueIndex("discord_notifications_entity_kind_unique").on(table.kind, table.entityType, table.entityId),
+  }),
+);
+
 export const auditLogs = sqliteTable("audit_logs", {
   id: text("id").primaryKey(),
   actorUserId: text("actor_user_id").references(() => users.id),
