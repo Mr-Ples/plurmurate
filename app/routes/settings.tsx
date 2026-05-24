@@ -9,6 +9,7 @@ import { getRepositories } from "~/repositories/drizzle/repositories";
 import { sendDiscordTestMessage } from "~/services/discord-service";
 import { updateUserRole } from "~/services/role-service";
 import { getSettings, updateSettings } from "~/services/settings-service";
+import { evaluatePendingNominations } from "~/services/approval-service";
 
 const buttonClass = "cursor-pointer rounded-md border border-[#1f2421] bg-[#1f2421] px-3.5 py-2.5 text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-45";
 const fieldClass = "min-h-[40px] rounded-md border border-[#1f242129] bg-white/55 px-3 py-2.5 outline-none focus:border-[#526f8d]";
@@ -57,9 +58,9 @@ export async function action({ request, context }: any) {
 
   await updateSettings(context, user, {
     ...current,
-    minimumTotalVotes: Number(formData.get("minimumTotalVotes")),
-    minimumPositiveRatio: Number(formData.get("minimumPositiveRatio")),
-    minimumPositiveMargin: Number(formData.get("minimumPositiveMargin")),
+    minimumTotalVotes: optionalNumber(formData.get("minimumTotalVotes")),
+    minimumPositiveRatio: optionalNumber(formData.get("minimumPositiveRatio")),
+    minimumPositiveMargin: optionalNumber(formData.get("minimumPositiveMargin")),
     minimumVotingAgeMinutes: Number(formData.get("minimumVotingAgeMinutes")),
     maximumVotingAgeDays: Number(formData.get("maximumVotingAgeDays")),
     publishingWorkflow: formData.get("publishingWorkflow"),
@@ -74,6 +75,7 @@ export async function action({ request, context }: any) {
     hostUserId: String(formData.get("hostUserId") ?? ""),
     hostHandle: String(formData.get("hostHandle") ?? ""),
   });
+  await evaluatePendingNominations(context);
 
   return redirect("/settings");
 }
@@ -131,15 +133,15 @@ export default function Settings() {
             <div className="grid gap-3">
               <label className={labelClass}>
                 <LabelText text="Minimum votes" info="How many total votes a nomination needs before it can qualify." />
-                <input className={fieldClass} name="minimumTotalVotes" type="number" min={1} defaultValue={settings.minimumTotalVotes} />
+                <input className={fieldClass} name="minimumTotalVotes" type="number" min={0} defaultValue={settings.minimumTotalVotes ?? ""} />
               </label>
               <label className={labelClass}>
                 <LabelText text="Approval percentage" info="The share of positive votes needed. 0.6 means 60%." />
-                <input className={fieldClass} name="minimumPositiveRatio" type="number" min={0} max={1} step="0.01" defaultValue={settings.minimumPositiveRatio} />
+                <input className={fieldClass} name="minimumPositiveRatio" type="number" min={0} max={1} step="0.01" defaultValue={settings.minimumPositiveRatio ?? ""} />
               </label>
               <label className={labelClass}>
                 <LabelText text="Approval lead" info="How many more positive votes than negative votes are required." />
-                <input className={fieldClass} name="minimumPositiveMargin" type="number" defaultValue={settings.minimumPositiveMargin} />
+                <input className={fieldClass} name="minimumPositiveMargin" type="number" defaultValue={settings.minimumPositiveMargin ?? ""} />
               </label>
               <label className={labelClass}>
                 <LabelText text="Minimum voting duration" info="How long voting must stay open before a nomination can qualify." />
@@ -210,6 +212,12 @@ export default function Settings() {
       </main>
     </AppShell>
   );
+}
+
+function optionalNumber(value: FormDataEntryValue | null) {
+  if (value === null) return null;
+  const trimmed = String(value).trim();
+  return trimmed === "" ? null : Number(trimmed);
 }
 
 function SectionHeader({ title }: { title: string }) {

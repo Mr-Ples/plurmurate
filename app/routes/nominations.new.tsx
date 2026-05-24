@@ -2,6 +2,7 @@ import { redirect } from "react-router";
 import { getCurrentUser } from "~/lib/auth/session";
 import { createNomination } from "~/services/nomination-service";
 import { storeNominationImage } from "~/services/media-service";
+import { evaluateNomination } from "~/services/approval-service";
 import { voteOnNomination } from "~/services/vote-service";
 
 export async function loader() {
@@ -21,5 +22,6 @@ export async function action({ request, context }: any) {
   for (const image of images) {
     await storeNominationImage(context, user, nomination.id, image, "nomination_image", new URL(request.url).origin);
   }
+  await evaluateNomination(context, nomination);
   return redirect("/");
 }

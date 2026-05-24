@@ -12,9 +12,9 @@ export async function evaluateNomination(context: AppLoadContext, nomination: No
   const summary = await repos.votes.getVoteSummary(nomination.id);
   const ageMinutes = (Date.now() - new Date(nomination.createdAt).getTime()) / 60000;
   const qualifies =
-    summary.total >= settings.minimumTotalVotes &&
-    summary.positiveRatio >= settings.minimumPositiveRatio &&
-    summary.positiveMargin >= settings.minimumPositiveMargin &&
+    thresholdPasses(summary.total, settings.minimumTotalVotes) &&
+    thresholdPasses(summary.positiveRatio, settings.minimumPositiveRatio) &&
+    thresholdPasses(summary.positiveMargin, settings.minimumPositiveMargin) &&
     ageMinutes >= settings.minimumVotingAgeMinutes;
   if (!qualifies) return;
   await repos.nominations.updateStatus(nomination.id, "qualified", { qualifiedAt: new Date().toISOString() });
@@ -23,4 +23,16 @@ export async function evaluateNomination(context: AppLoadContext, nomination: No
   if (settings.publishingWorkflow === "auto_send_when_qualified") {
     await sendQualifiedNomination(context, nomination.id, null);
   }
+}
+
+export async function evaluatePendingNominations(context: AppLoadContext) {
+  const repos = getRepositories(context.cloudflare.env);
+  const nominations = await repos.nominations.listFeed({ status: "pending" });
+  for (const nomination of nominations) {
+    await evaluateNomination(context, nomination);
+  }
+}
+
+function thresholdPasses(value: number, threshold: number | null) {
+  return threshold === null || value >= threshold;
 }

@@ -11,11 +11,13 @@ import { voteOnNomination } from "~/services/vote-service";
 import { createNomination } from "~/services/nomination-service";
 import { storeNominationImage } from "~/services/media-service";
 import { hydrateMissingTargetTweets } from "~/services/external-tweet-service";
+import { evaluateNomination, evaluatePendingNominations } from "~/services/approval-service";
 
 export async function loader({ request, context }: any) {
   const user = await getCurrentUser(request, context);
   const repos = getRepositories(context.cloudflare.env);
   const settings = await getSettings(context);
+  await evaluatePendingNominations(context);
   const users = await repos.users.listUsers();
   const host = users.find((candidate) => candidate.xUserId === settings.hostUserId || candidate.username?.toLowerCase() === settings.hostHandle.toLowerCase()) ?? null;
   let nominations = await repos.nominations.listFeed({
@@ -53,6 +55,7 @@ export async function action({ request, context }: any) {
   for (const image of images) {
     await storeNominationImage(context, user, nomination.id, image, "nomination_image", new URL(request.url).origin);
   }
+  await evaluateNomination(context, nomination);
   return redirect("/");
 }
 

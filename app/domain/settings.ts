@@ -10,10 +10,13 @@ export const tweetAvatarModeSchema = z.enum(["disabled", "optional", "required"]
 export type PublishingWorkflow = z.infer<typeof publishingWorkflowSchema>;
 export type TweetAvatarMode = z.infer<typeof tweetAvatarModeSchema>;
 
+const optionalManualThreshold = (schema: z.ZodType<number>, defaultValue: number) =>
+  z.preprocess((value) => value === "" ? null : value, schema.nullable()).default(defaultValue) as z.ZodType<number | null>;
+
 export const appSettingsSchema = z.object({
-  minimumTotalVotes: z.coerce.number().int().min(1).default(5),
-  minimumPositiveRatio: z.coerce.number().min(0).max(1).default(0.6),
-  minimumPositiveMargin: z.coerce.number().int().default(2),
+  minimumTotalVotes: optionalManualThreshold(z.coerce.number().int().min(0), 5),
+  minimumPositiveRatio: optionalManualThreshold(z.coerce.number().min(0).max(1), 0.6),
+  minimumPositiveMargin: optionalManualThreshold(z.coerce.number().int(), 2),
   minimumVotingAgeMinutes: z.coerce.number().int().min(0).default(30),
   maximumVotingAgeDays: z.coerce.number().int().min(1).default(7),
   publishingWorkflow: publishingWorkflowSchema.default("manual_review_when_qualified"),
@@ -27,6 +30,17 @@ export const appSettingsSchema = z.object({
   maxImageUploadBytes: z.coerce.number().int().min(1).default(5 * 1024 * 1024),
   hostUserId: z.string().default(""),
   hostHandle: z.string().default(""),
+}).superRefine((settings, context) => {
+  if (settings.publishingWorkflow === "manual_review_when_qualified") return;
+  for (const field of ["minimumTotalVotes", "minimumPositiveRatio", "minimumPositiveMargin"] as const) {
+    if (settings[field] === null) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [field],
+        message: "This threshold is required when publishing automatically.",
+      });
+    }
+  }
 });
 
 export type AppSettings = z.infer<typeof appSettingsSchema>;
