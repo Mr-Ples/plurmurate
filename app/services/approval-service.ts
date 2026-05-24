@@ -10,12 +10,10 @@ export async function evaluateNomination(context: AppLoadContext, nomination: No
   const repos = getRepositories(context.cloudflare.env);
   const settings = await getSettings(context);
   const summary = await repos.votes.getVoteSummary(nomination.id);
-  const ageMinutes = (Date.now() - new Date(nomination.createdAt).getTime()) / 60000;
   const qualifies =
     thresholdPasses(summary.total, settings.minimumTotalVotes) &&
     thresholdPasses(summary.positiveRatio, settings.minimumPositiveRatio) &&
-    thresholdPasses(summary.positiveMargin, settings.minimumPositiveMargin) &&
-    ageMinutes >= settings.minimumVotingAgeMinutes;
+    thresholdPasses(summary.positiveMargin, settings.minimumPositiveMargin);
   if (!qualifies) return;
   await repos.nominations.updateStatus(nomination.id, "qualified", { qualifiedAt: new Date().toISOString() });
   await repos.auditLogs.create({ actorUserId: null, action: "nomination.qualified", entityType: "nomination", entityId: nomination.id, metadata: summary });

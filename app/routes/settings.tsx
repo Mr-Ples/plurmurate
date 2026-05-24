@@ -61,8 +61,6 @@ export async function action({ request, context }: any) {
     minimumTotalVotes: optionalNumber(formData.get("minimumTotalVotes")),
     minimumPositiveRatio: optionalNumber(formData.get("minimumPositiveRatio")),
     minimumPositiveMargin: optionalNumber(formData.get("minimumPositiveMargin")),
-    minimumVotingAgeMinutes: Number(formData.get("minimumVotingAgeMinutes")),
-    maximumVotingAgeDays: Number(formData.get("maximumVotingAgeDays")),
     publishingWorkflow: formData.get("publishingWorkflow"),
     creatorSelfVoteAllowed: formData.get("creatorSelfVoteAllowed") === "on",
     privilegedVotesCountTowardCriteria: formData.get("privilegedVotesCountTowardCriteria") === "on",
@@ -142,14 +140,6 @@ export default function Settings() {
               <label className={labelClass}>
                 <LabelText text="Approval lead" info="How many more positive votes than negative votes are required." />
                 <input className={fieldClass} name="minimumPositiveMargin" type="number" defaultValue={settings.minimumPositiveMargin ?? ""} />
-              </label>
-              <label className={labelClass}>
-                <LabelText text="Minimum voting duration" info="How long voting must stay open before a nomination can qualify." />
-                <input className={fieldClass} name="minimumVotingAgeMinutes" type="number" min={0} defaultValue={settings.minimumVotingAgeMinutes} />
-              </label>
-              <label className={labelClass}>
-                <LabelText text="Maximum voting duration" info="How long voting can stay open before it expires." />
-                <input className={fieldClass} name="maximumVotingAgeDays" type="number" min={1} defaultValue={settings.maximumVotingAgeDays} />
               </label>
             </div>
             <div className="grid gap-2">

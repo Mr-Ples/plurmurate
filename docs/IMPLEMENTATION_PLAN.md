@@ -379,8 +379,6 @@ interface AppSettings {
   minimumTotalVotes: number;
   minimumPositiveRatio: number;
   minimumPositiveMargin: number;
-  minimumVotingAgeMinutes: number;
-  maximumVotingAgeDays: number;
   publishingWorkflow: PublishingWorkflow;
   creatorSelfVoteAllowed: boolean;
   privilegedVotesCountTowardCriteria: boolean;
@@ -422,7 +420,6 @@ A pending nomination qualifies when:
 totalVotes >= minimumTotalVotes
 positiveRatio >= minimumPositiveRatio
 positiveMargin >= minimumPositiveMargin
-minimumVotingAge has passed
 status is pending
 not vetoed
 ```

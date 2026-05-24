@@ -17,8 +17,6 @@ export const appSettingsSchema = z.object({
   minimumTotalVotes: optionalManualThreshold(z.coerce.number().int().min(0), 5),
   minimumPositiveRatio: optionalManualThreshold(z.coerce.number().min(0).max(1), 0.6),
   minimumPositiveMargin: optionalManualThreshold(z.coerce.number().int(), 2),
-  minimumVotingAgeMinutes: z.coerce.number().int().min(0).default(30),
-  maximumVotingAgeDays: z.coerce.number().int().min(1).default(7),
   publishingWorkflow: publishingWorkflowSchema.default("manual_review_when_qualified"),
   creatorSelfVoteAllowed: z.coerce.boolean().default(false),
   privilegedVotesCountTowardCriteria: z.coerce.boolean().default(true),
