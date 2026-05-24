@@ -19,6 +19,13 @@ type DiscordNotification =
       kind: "nomination_qualified";
       nomination: Nomination;
       summary: VoteSummary;
+    }
+  | {
+      kind: "nomination_sent";
+      nomination: Nomination;
+      actor: CurrentUser | null;
+      publishedUrl?: string | null;
+      manual: boolean;
     };
 
 export async function sendDiscordTestMessage(context: AppLoadContext) {
@@ -79,26 +86,37 @@ async function sendDiscordMessage(env: DiscordEnv, message: unknown) {
 
 function buildDiscordMessage(notification: DiscordNotification) {
   const nomination = notification.nomination;
-  const title = notification.kind === "new_nomination" ? "New nomination" : "Nomination qualified";
+  const title = notification.kind === "new_nomination" ? "New nomination" : notification.kind === "nomination_qualified" ? "Nomination qualified" : "Nomination sent";
   const description = nomination.text || nomination.targetTweetUrl || nomination.rationale || "No text provided.";
   const fields = [
     { name: "Type", value: nominationTypeLabel(nomination.type), inline: true },
-    { name: "Status", value: notification.kind === "new_nomination" ? nomination.status : "qualified", inline: true },
+    { name: "Status", value: notification.kind === "new_nomination" ? nomination.status : notification.kind === "nomination_qualified" ? "qualified" : "sent", inline: true },
   ];
 
   if (notification.kind === "new_nomination") {
     const name = notification.actor.displayName || notification.actor.username || notification.actor.xUserId;
     fields.push({ name: "Submitted by", value: notification.actor.username ? `@${notification.actor.username}` : name, inline: true });
-  } else {
+  } else if (notification.kind === "nomination_qualified") {
     fields.push(
       { name: "Votes", value: `A ${notification.summary.a} / B ${notification.summary.b} / U ${notification.summary.u}`, inline: true },
       { name: "Positive ratio", value: `${Math.round(notification.summary.positiveRatio * 100)}%`, inline: true },
       { name: "Margin", value: String(notification.summary.positiveMargin), inline: true },
     );
+  } else {
+    fields.push({ name: "Method", value: notification.manual ? "Manual" : "Automatic", inline: true });
+    if (notification.actor) {
+      const name = notification.actor.displayName || notification.actor.username || notification.actor.xUserId;
+      fields.push({ name: "Sent by", value: notification.actor.username ? `@${notification.actor.username}` : name, inline: true });
+    }
+    if (notification.publishedUrl) fields.push({ name: "Published post", value: notification.publishedUrl, inline: false });
   }
 
   return {
-    content: notification.kind === "new_nomination" ? "A new nomination was submitted." : "A nomination is qualified and ready for review.",
+    content: notification.kind === "new_nomination"
+      ? "A new nomination was submitted."
+      : notification.kind === "nomination_qualified"
+        ? "A nomination is qualified and ready for review."
+        : "A nomination was sent.",
     embeds: [
       {
         title,

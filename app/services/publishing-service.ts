@@ -4,6 +4,7 @@ import { requirePermission } from "~/lib/permissions/permissions";
 import { getRepositories } from "~/repositories/drizzle/repositories";
 import type { CurrentUser } from "~/repositories/interfaces";
 import { LiveXClient } from "~/x/live-x-client";
+import { queueDiscordNotification } from "./discord-service";
 import { getSettings } from "./settings-service";
 
 export async function getPublishingAccessToken(context: AppLoadContext, hostUserId: string, client: LiveXClient) {
@@ -80,6 +81,13 @@ export async function sendQualifiedNomination(context: AppLoadContext, nominatio
       decisionRationale: cleanDecisionRationale(decisionRationale),
     });
     await repos.auditLogs.create({ actorUserId: actor?.id ?? null, action: "nomination.send", entityType: "nomination", entityId: nominationId, metadata: response });
+    queueDiscordNotification(context, {
+      kind: "nomination_sent",
+      nomination,
+      actor,
+      publishedUrl: response.url ?? null,
+      manual: actor !== null,
+    });
   } catch (error) {
     await repos.publishAttempts.create({
       nominationId,
@@ -102,18 +110,19 @@ export async function markNominationSentManually(context: AppLoadContext, nomina
   if (!nomination) throw new Response("Not found", { status: 404 });
   if (["sent", "withdrawn"].includes(nomination.status)) throw new Response("Nomination is not sendable", { status: 400 });
   const settings = await getSettings(context);
+  const cleanUrl = cleanPublishedUrl(publishedUrl);
   await repos.publishAttempts.create({
     nominationId,
     workflow: settings.publishingWorkflow,
     actorUserId: actor.id,
     xOperation: "manual",
-    requestJson: { manual: true, publishedUrl: cleanPublishedUrl(publishedUrl) },
-    responseJson: { manual: true, publishedUrl: cleanPublishedUrl(publishedUrl) },
+    requestJson: { manual: true, publishedUrl: cleanUrl },
+    responseJson: { manual: true, publishedUrl: cleanUrl },
     status: "success",
   });
   await repos.nominations.updateStatus(nominationId, "sent", {
     sentAt: new Date().toISOString(),
-    publishedTweetUrl: cleanPublishedUrl(publishedUrl),
+    publishedTweetUrl: cleanUrl,
     decisionRationale: cleanDecisionRationale(decisionRationale),
   });
   await repos.auditLogs.create({
@@ -121,7 +130,14 @@ export async function markNominationSentManually(context: AppLoadContext, nomina
     action: "nomination.sent_manually",
     entityType: "nomination",
     entityId: nominationId,
-    metadata: { decisionRationale: cleanDecisionRationale(decisionRationale), publishedUrl: cleanPublishedUrl(publishedUrl) },
+    metadata: { decisionRationale: cleanDecisionRationale(decisionRationale), publishedUrl: cleanUrl },
+  });
+  queueDiscordNotification(context, {
+    kind: "nomination_sent",
+    nomination,
+    actor,
+    publishedUrl: cleanUrl,
+    manual: true,
   });
 }
 

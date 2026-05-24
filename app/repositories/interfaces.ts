@@ -145,7 +145,7 @@ export interface PublishAttemptRepository {
 
 export interface DiscordNotificationRepository {
   reserve(input: {
-    kind: "new_nomination" | "nomination_qualified";
+    kind: "new_nomination" | "nomination_qualified" | "nomination_sent";
     entityType: "nomination";
     entityId: string;
   }): Promise<string | null>;

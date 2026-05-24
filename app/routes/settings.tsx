@@ -78,6 +78,7 @@ export async function action({ request, context }: any) {
 
 export default function Settings() {
   const { user, settings, users, visibleNominationCount, pendingPublishingImpact, discordTest } = useLoaderData<typeof loader>();
+  const [roleInfoOpen, setRoleInfoOpen] = useState(false);
   const maxImageUploadMb = Math.max(1, Math.round(settings.maxImageUploadBytes / 1024 / 1024));
   const [publishingWorkflow, setPublishingWorkflow] = useState(settings.publishingWorkflow);
   const [minimumTotalVotes, setMinimumTotalVotes] = useState(settings.minimumTotalVotes?.toString() ?? "");
@@ -115,12 +116,23 @@ export default function Settings() {
         </section> */}
 
         <section id="roles" className={`${cardClass} grid gap-4 scroll-mt-6`}>
-          <SectionHeader title="Roles" />
-          <div className="grid gap-2">
+          <div className="flex items-center justify-between gap-3">
+            <SectionHeader title="Roles" />
+            <button
+              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-[#1f242129] bg-white/45 text-[#6e716b] hover:border-[#1f24214d] hover:bg-[#fffcf4]"
+              type="button"
+              onClick={() => setRoleInfoOpen(true)}
+              aria-label="Show role explanations"
+            >
+              <Info size={17} aria-hidden="true" />
+            </button>
+          </div>
+          <div className="grid max-h-[520px] gap-2 overflow-y-auto pr-2">
             {users.map((account) => (
               <RoleEditor key={account.id} account={account} />
             ))}
           </div>
+          {roleInfoOpen ? <RoleInfoDialog onClose={() => setRoleInfoOpen(false)} /> : null}
         </section>
 
         <section id="discord" className={`${cardClass} grid gap-4 scroll-mt-6`}>
@@ -325,6 +337,35 @@ function RoleEditor({ account }: { account: { id: string; username: string | nul
       ) : null}
     </div>
   );
+}
+
+function RoleInfoDialog({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-[#1f242166] p-4" role="presentation" onClick={onClose}>
+      <div className="grid w-full max-w-[460px] gap-4 rounded-md border border-[#1f242129] bg-[#fffcf4] p-5 shadow-[0_18px_48px_rgba(31,36,33,0.22)]" role="dialog" aria-modal="true" aria-labelledby="role-info-title" onClick={(event) => event.stopPropagation()}>
+        <div className="flex items-start justify-between gap-3">
+          <h2 id="role-info-title" className="m-0 text-xl font-medium">Role explanations</h2>
+          <button className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-[#1f242129] bg-white/45 text-[#6e716b] hover:border-[#1f24214d]" type="button" onClick={onClose} aria-label="Close role explanations">
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+        <div className="grid gap-3 text-sm leading-snug">
+          {roleNames.map((role) => (
+            <div key={role} className="rounded-md border border-[#1f242114] bg-white/35 p-3">
+              <p className="m-0 font-medium">{role}</p>
+              <p className="mt-1 mb-0 text-[#6e716b]">{roleExplanation(role)}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function roleExplanation(role: RoleName) {
+  if (role === "admin") return "Can moderate nominations, send approved posts, update settings, and manage roles. Note: withdrawn/archived nominations are only visible to admin";
+  if (role === "voter") return "Can create nominations and vote on open nominations.";
+  return "Can view the app and create nominations, but cannot vote or moderate.";
 }
 
 function nominationTypeTitle(type: (typeof nominationTypes)[number]) {
