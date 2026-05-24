@@ -47,8 +47,22 @@ export function TargetTweetCard({
     return (
       <div
         ref={embedRef}
-        className="target-tweet-embed relative mt-3.5 max-w-full overflow-hidden text-[#1f2421]"
-        onClick={(event) => event.stopPropagation()}
+        className="target-tweet-embed relative mt-3.5 max-w-full cursor-pointer overflow-hidden text-[#1f2421]"
+        role="link"
+        tabIndex={0}
+        aria-label={`Open ${displayName} on X`}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (event.target === event.currentTarget) window.open(url, "_blank", "noopener,noreferrer");
+        }}
+        onKeyDown={(event) => {
+          if (event.target !== event.currentTarget) return;
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            event.stopPropagation();
+            window.open(url, "_blank", "noopener,noreferrer");
+          }
+        }}
         dangerouslySetInnerHTML={{ __html: tweet.embedHtml }}
       />
     );

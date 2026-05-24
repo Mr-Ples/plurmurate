@@ -5,7 +5,7 @@ export class R2ObjectStorage implements ObjectStorage {
 
   async put(input: PutObjectInput) {
     await this.bucket.put(input.key, input.body, { httpMetadata: { contentType: input.contentType } });
-    return { key: input.key, publicUrl: `${input.publicBaseUrl.replace(/\/$/, "")}/media/${input.key}` };
+    return { key: input.key, publicUrl: `/media/${input.key}` };
   }
 
   async get(key: string) {

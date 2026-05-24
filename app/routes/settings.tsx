@@ -4,6 +4,7 @@ import { Form, redirect, useLoaderData } from "react-router";
 import { AppShell } from "~/components/AppShell";
 import { nominationTypes } from "~/domain/nominations";
 import { roleNames, type RoleName } from "~/domain/roles";
+import type { AppSettings } from "~/domain/settings";
 import { getCurrentUser } from "~/lib/auth/session";
 import { requirePermission } from "~/lib/permissions/permissions";
 import { getRepositories } from "~/repositories/drizzle/repositories";
@@ -129,7 +130,7 @@ export default function Settings() {
           </div>
           <div className="grid max-h-[520px] gap-2 overflow-y-auto pr-2">
             {users.map((account) => (
-              <RoleEditor key={account.id} account={account} />
+              <RoleEditor key={account.id} account={account} isHost={isHostAccount(account, settings)} />
             ))}
           </div>
           {roleInfoOpen ? <RoleInfoDialog onClose={() => setRoleInfoOpen(false)} /> : null}
@@ -303,13 +304,13 @@ function Toggle({ name, defaultChecked, title, info }: { name: string; defaultCh
   );
 }
 
-function RoleEditor({ account }: { account: { id: string; username: string | null; xUserId: string; roles: RoleName[] } }) {
+function RoleEditor({ account, isHost }: { account: { id: string; username: string | null; xUserId: string; roles: RoleName[] }; isHost: boolean }) {
   const availableRoles = roleNames.filter((role) => !account.roles.includes(role));
 
   return (
     <div className="grid max-w-[640px] gap-3 border-b border-[#1f242129] py-3 last:border-b-0">
       <div className="min-w-0">
-        <p className="m-0 overflow-hidden text-ellipsis whitespace-nowrap font-medium">@{account.username ?? account.xUserId}</p>
+        <p className="m-0 overflow-hidden text-ellipsis whitespace-nowrap font-medium">@{account.username ?? account.xUserId}{isHost ? <span className="ml-2 text-sm font-normal text-[#6e716b]">host</span> : null}</p>
       </div>
       <div className="flex flex-wrap gap-2">
         {account.roles.length ? account.roles.map((role) => (
@@ -317,9 +318,9 @@ function RoleEditor({ account }: { account: { id: string; username: string | nul
             <input type="hidden" name="_intent" value="role" />
             <input type="hidden" name="userId" value={account.id} />
             <input type="hidden" name="role" value={role} />
-            <button className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border border-[#1f242129] bg-white/50 px-3 text-sm font-medium text-[#1f2421] hover:border-[#8b343466] hover:text-[#8b3434]" type="submit" aria-label={`Remove ${role} from @${account.username ?? account.xUserId}`}>
+            <button className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border border-[#1f242129] bg-white/50 px-3 text-sm font-medium text-[#1f2421] hover:border-[#8b343466] hover:text-[#8b3434] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-[#1f242129] disabled:hover:text-[#1f2421]" type="submit" aria-label={`Remove ${role} from @${account.username ?? account.xUserId}`} disabled={isHost}>
               {role}
-              <X size={14} aria-hidden="true" />
+              {isHost ? null : <X size={14} aria-hidden="true" />}
             </button>
           </Form>
         )) : <span className="text-sm text-[#6e716b]">No roles</span>}
@@ -336,6 +337,14 @@ function RoleEditor({ account }: { account: { id: string; username: string | nul
         </Form>
       ) : null}
     </div>
+  );
+}
+
+function isHostAccount(account: { username: string | null; xUserId: string }, settings: AppSettings) {
+  const cleanHostHandle = settings.hostHandle.replace(/^@/, "").toLowerCase();
+  return Boolean(
+    (settings.hostUserId && account.xUserId === settings.hostUserId) ||
+    (cleanHostHandle && account.username?.toLowerCase() === cleanHostHandle),
   );
 }
 

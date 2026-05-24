@@ -73,6 +73,10 @@ function mapExternalTweet(row: any) {
   };
 }
 
+function mediaUrlFromStorageKey(storageKey: string | null | undefined) {
+  return storageKey ? `/media/${storageKey}` : null;
+}
+
 export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; X_HOST_HANDLE?: string }): Repositories {
   const db = drizzle(env.DB);
 
@@ -231,7 +235,7 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
             creatorUsername: users.username,
             creatorDisplayName: users.displayName,
             creatorProfileImageUrl: users.profileImageUrl,
-            nominationMediaUrl: mediaAssets.publicUrl,
+            nominationMediaStorageKey: mediaAssets.storageKey,
             targetTweet: externalTweets,
           })
           .from(nominations)
@@ -269,13 +273,13 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
               .where(and(eq(votes.nominationId, row.nomination.id), sql`${votes.comment} IS NOT NULL AND ${votes.comment} != ''`))
               .get();
             const nominationMediaRows = await db
-              .select({ publicUrl: mediaAssets.publicUrl })
+              .select({ storageKey: mediaAssets.storageKey })
               .from(mediaAssets)
-              .where(and(eq(mediaAssets.nominationId, row.nomination.id), eq(mediaAssets.kind, "nomination_image"), sql`${mediaAssets.publicUrl} IS NOT NULL`))
+              .where(and(eq(mediaAssets.nominationId, row.nomination.id), eq(mediaAssets.kind, "nomination_image")))
               .orderBy(mediaAssets.createdAt)
               .all();
             const nominationMediaUrls = nominationMediaRows
-              .map((media) => media.publicUrl)
+              .map((media) => mediaUrlFromStorageKey(media.storageKey))
               .filter((url): url is string => Boolean(url));
             return {
               ...mapNomination(row.nomination),
@@ -288,7 +292,7 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
               voteCommentCount: Number(commentCount?.count ?? 0),
               userVote: (userVote?.value as VoteValue | undefined) ?? null,
               recentVoteComment: recentComment?.comment ?? null,
-              nominationMediaUrl: row.nominationMediaUrl,
+              nominationMediaUrl: mediaUrlFromStorageKey(row.nominationMediaStorageKey),
               nominationMediaUrls,
               tweetAvatarUrl: row.creatorProfileImageUrl,
               targetTweet: row.targetTweet ? mapExternalTweet(row.targetTweet) : null,
