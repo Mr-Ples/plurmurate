@@ -2,7 +2,6 @@ import type { AppLoadContext } from "react-router";
 import type { Nomination } from "~/domain/nominations";
 import { getRepositories } from "~/repositories/drizzle/repositories";
 import { getSettings } from "./settings-service";
-import { sendQualifiedNomination } from "./publishing-service";
 import { queueDiscordNotification } from "./discord-service";
 
 export async function evaluateNomination(context: AppLoadContext, nomination: Nomination) {
@@ -20,13 +19,6 @@ export async function evaluateNomination(context: AppLoadContext, nomination: No
   if (!didQualify) return;
   await repos.auditLogs.create({ actorUserId: null, action: "nomination.qualified", entityType: "nomination", entityId: nomination.id, metadata: summary });
   queueDiscordNotification(context, { kind: "nomination_qualified", nomination, summary });
-  if (settings.publishingWorkflow === "auto_send_when_qualified") {
-    try {
-      await sendQualifiedNomination(context, nomination.id, null);
-    } catch (error) {
-      console.warn("Automatic publishing failed", error);
-    }
-  }
 }
 
 export async function evaluatePendingNominations(context: AppLoadContext) {

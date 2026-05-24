@@ -72,7 +72,7 @@ export async function action({ request, context }: any) {
     minimumTotalVotes: optionalNumber(formData.get("minimumTotalVotes")),
     minimumPositiveRatio: optionalNumber(formData.get("minimumPositiveRatio")),
     minimumPositiveMargin: optionalNumber(formData.get("minimumPositiveMargin")),
-    publishingWorkflow: formData.get("publishingWorkflow"),
+    publishingWorkflow: "manual_review_when_qualified",
     includeTweetAvatarInPublishedMedia: formData.get("includeTweetAvatarInPublishedMedia") === "on",
     enabledNominationTypes,
     maxImageUploadBytes,
@@ -88,7 +88,9 @@ export default function Settings() {
   const { user, settings, users, visibleNominationCount, pendingPublishingImpact, discordTest } = useLoaderData<typeof loader>();
   const [roleInfoOpen, setRoleInfoOpen] = useState(false);
   const maxImageUploadMb = Math.max(1, Math.round(settings.maxImageUploadBytes / 1024 / 1024));
-  const [publishingWorkflow, setPublishingWorkflow] = useState(settings.publishingWorkflow);
+  const [publishingWorkflow, setPublishingWorkflow] = useState<AppSettings["publishingWorkflow"]>(
+    settings.publishingWorkflow === "auto_send_when_qualified" ? "manual_review_when_qualified" : settings.publishingWorkflow,
+  );
   const [minimumTotalVotes, setMinimumTotalVotes] = useState(settings.minimumTotalVotes?.toString() ?? "");
   const [minimumPositiveRatio, setMinimumPositiveRatio] = useState(settings.minimumPositiveRatio?.toString() ?? "");
   const [minimumPositiveMargin, setMinimumPositiveMargin] = useState(settings.minimumPositiveMargin?.toString() ?? "");
@@ -277,9 +279,10 @@ export default function Settings() {
                 <LabelText text="Publishing workflow" info="Choose whether qualified nominations go to review or publish automatically." />
                 <select className={fieldClass} name="publishingWorkflow" value={publishingWorkflow} onChange={(event) => setPublishingWorkflow(event.currentTarget.value as typeof settings.publishingWorkflow)}>
                   <option value="manual_review_when_qualified">Review before publishing</option>
-                  <option value="auto_send_when_qualified">Publish automatically</option>
+                  <option value="auto_send_when_qualified" disabled>Publish automatically (coming soon)</option>
                 </select>
               </label>
+              <p className="m-0 text-sm text-[#6e716b]">Automated sending is coming soon.</p>
               {publishingWorkflow === "auto_send_when_qualified" ? (
                 <div className="rounded-md border border-[#b9892f66] bg-[#fff2cf] px-3 py-2.5 text-sm leading-snug text-[#6b4a12]">
                   {automaticPublishingWithOptionalQualifications ? "Blank vote qualifications are ignored. A pending nomination can publish as soon as the remaining qualifications pass, and if all vote qualifications are blank, one vote can qualify it. " : null}
