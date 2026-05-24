@@ -1,8 +1,8 @@
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { ExternalLink } from "lucide-react";
 import type { ExternalTweetPreview } from "~/domain/external-tweets";
 
-export function TargetTweetCard({
+export const TargetTweetCard = memo(function TargetTweetCard({
   tweet,
   fallbackUrl,
   fallbackId,
@@ -111,4 +111,4 @@ export function TargetTweetCard({
       </div>
     </a>
   );
-}
+});

@@ -5,6 +5,12 @@ import styles from "./styles/app.css?url";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
 
+export async function loader({ context }: any) {
+  return {
+    repoUrl: context.cloudflare.env.GITHUB_REPOSITORY_URL || null,
+  };
+}
+
 export default function Root() {
   return (
     <html lang="en" className="min-h-full">

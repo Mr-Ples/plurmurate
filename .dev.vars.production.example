@@ -2,5 +2,6 @@ SESSION_SECRET=replace-with-at-least-32-random-characters
 
 X_CLIENT_ID=your-production-x-oauth-client-id
 X_CLIENT_SECRET=your-production-x-oauth-client-secret
+GITHUB_REPOSITORY_URL=https://github.com/Mr-Ples/plurmur
 DISCORD_BOT_TOKEN=
 DISCORD_CHANNEL_ID=

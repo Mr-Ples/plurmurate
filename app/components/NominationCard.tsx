@@ -10,6 +10,7 @@ const primaryActionClass = `${buttonClass} border-[#1f2421] bg-[#1f2421] text-[#
 const secondaryActionClass = `${buttonClass} border-[#1f242129] bg-white/45 text-[#1f2421] hover:border-[#1f24214d] hover:bg-[#fffcf4]`;
 const voteClass = "inline-flex h-9 min-w-[56px] cursor-pointer items-center justify-center gap-1.5 rounded-md border border-[#1f242129] bg-white/45 px-3 text-sm font-medium text-[#1f2421] hover:bg-[#fffcf4] disabled:cursor-not-allowed disabled:opacity-45";
 const activeVoteClass = "border-[#496d58] bg-[#dbeadf] text-[#1f2421] hover:bg-[#dbeadf]";
+const voteCommentClass = "h-9 min-w-[170px] flex-1 rounded-md border border-[#1f242129] bg-white/45 px-3 text-sm outline-none focus:border-[#526f8d] disabled:cursor-not-allowed disabled:opacity-45";
 const decisionFieldClass = "min-h-[72px] w-full rounded-md border border-[#1f242129] bg-white/45 px-3 py-2 text-sm outline-none focus:border-[#526f8d]";
 const manualUrlClass = "min-h-[38px] w-full rounded-md border border-[#1f242129] bg-white/55 px-3 py-2 text-sm outline-none focus:border-[#526f8d]";
 
@@ -128,16 +129,18 @@ export function NominationCard({
           {targetPost}
         </>
       )}
-      <div className="relative mt-[18px] flex items-center gap-2">
-        {(["A", "B", "U"] as const).map((value) => (
-          <Form method="post" action="/nominations/new" key={value} className="m-0" onClick={(event) => event.stopPropagation()}>
-            <input type="hidden" name="_intent" value="vote" />
-            <input type="hidden" name="nominationId" value={nomination.id} />
-            <input type="hidden" name="value" value={value} />
-            <span className="group relative inline-flex">
+      <Form method="post" action="/nominations/new" className="relative mt-[18px] flex flex-wrap items-center gap-2" onClick={(event) => event.stopPropagation()}>
+        <input type="hidden" name="_intent" value="vote" />
+        <input type="hidden" name="nominationId" value={nomination.id} />
+        <div className="flex gap-2">
+          {(["A", "B", "U"] as const).map((value) => (
+            <span className="group relative inline-flex" key={value}>
               <button
                 className={`${voteClass} ${nomination.userVote === value ? activeVoteClass : ""}`}
+                name="value"
+                value={value}
                 disabled={!canVote}
+                type="submit"
                 title={canVote && nomination.userVote === value ? "Undo your vote" : undefined}
                 aria-describedby={!canVote && voteDisabledReason ? `${nomination.id}-${value}-vote-disabled` : undefined}
                 aria-pressed={nomination.userVote === value}
@@ -147,9 +150,10 @@ export function NominationCard({
               </button>
               {!canVote && voteDisabledReason ? <VoteDisabledTip id={`${nomination.id}-${value}-vote-disabled`} text={voteDisabledReason} /> : null}
             </span>
-          </Form>
-        ))}
-      </div>
+          ))}
+        </div>
+        <input className={voteCommentClass} name="comment" maxLength={400} placeholder="Optional vote comment" disabled={!canVote} />
+      </Form>
       {nomination.recentVoteComment ? <p className="relative text-[#6e716b]">"{nomination.recentVoteComment}"</p> : null}
       {decisionRationale}
       {publishedLink}

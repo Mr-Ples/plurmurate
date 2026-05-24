@@ -14,11 +14,11 @@ import { voteOnNomination } from "~/services/vote-service";
 const buttonClass = "cursor-pointer rounded-md border px-3.5 py-2.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-45";
 const primaryActionClass = `${buttonClass} border-[#1f2421] bg-[#1f2421] text-[#fffaf0] hover:bg-[#313834]`;
 const secondaryActionClass = `${buttonClass} border-[#1f242129] bg-white/45 text-[#1f2421] hover:border-[#1f24214d] hover:bg-[#fffcf4]`;
-const fieldClass = "rounded-md border border-[#1f242129] bg-white/45 px-3 py-2.5";
 const decisionFieldClass = "min-h-[92px] w-full rounded-md border border-[#1f242129] bg-white/45 px-3 py-2.5 outline-none focus:border-[#526f8d]";
 const manualUrlClass = "min-h-[40px] w-full rounded-md border border-[#1f242129] bg-white/55 px-3 py-2.5 outline-none focus:border-[#526f8d]";
 const voteClass = "inline-flex h-10 min-w-[62px] cursor-pointer items-center justify-center gap-1.5 rounded-md border border-[#1f242129] bg-white/45 px-3 text-sm font-medium text-[#1f2421] hover:bg-[#fffcf4] disabled:cursor-not-allowed disabled:opacity-45";
 const activeVoteClass = "border-[#496d58] bg-[#dbeadf] text-[#1f2421] hover:bg-[#dbeadf]";
+const voteCommentClass = "h-10 min-w-[190px] flex-1 rounded-md border border-[#1f242129] bg-white/45 px-3 text-sm outline-none focus:border-[#526f8d] disabled:cursor-not-allowed disabled:opacity-45";
 
 export async function loader({ request, context, params }: any) {
   const user = await getCurrentUser(request, context);
@@ -126,98 +126,96 @@ export default function NominationDetail() {
             Back
           </Link>
         )}
-        <div className="grid gap-5 md:grid-cols-[1fr_minmax(240px,340px)]">
         <div className="relative grid gap-3">
-        {nomination.type === "reply" ? replyTargetPost : null}
-        {nomination.type === "reply" ? <span className="pointer-events-none absolute top-[calc(50%-18px)] bottom-[calc(50%-18px)] left-8 w-px bg-[#526f8d73]" aria-hidden="true" /> : null}
-        <article className={`relative rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-[18px] shadow-[0_12px_30px_rgba(31,36,33,0.06)] ${nomination.type === "reply" ? "ml-auto w-[94%] md:w-[88%]" : ""}`}>
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(82,111,141,0.12),transparent_50%),linear-gradient(45deg,transparent,rgba(140,91,74,0.08))]" />
-          <p className="relative m-0 text-xs uppercase tracking-[0.08em] text-[#6e716b]">{nominationTypeLabel(nomination.type)} / {nomination.status}</p>
-          {nomination.type === "repost" ? (
-            <div className="relative mt-4">
-              <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-[#6e716b]"><Repeat2 size={16} aria-hidden="true" /> Repost</p>
-              {targetPost}
-              {motivation}
-            </div>
-          ) : nomination.type === "reply" ? (
-            <>
-              {nomination.text ? <h1 className="relative mt-4 mb-[18px] border-l-2 border-[#526f8d73] pl-4 text-[clamp(1.35rem,3vw,2.25rem)] leading-[1.18] font-medium">{nomination.text}</h1> : null}
-              {media}
-              {motivation}
-            </>
-          ) : (
-            <>
-              <h1 className="relative text-[clamp(1.35rem,3vw,2.25rem)] leading-[1.18] font-medium">{nomination.text ?? nomination.targetTweetUrl}</h1>
-              {media}
-              {motivation}
-              {targetPost}
-            </>
-          )}
-          <Form method="post" className="relative flex flex-wrap gap-2.5">
-            <input type="hidden" name="_intent" value="vote" />
-            <input type="hidden" name="nominationId" value={nomination.id} />
-            <div className="flex gap-2">
-              {(["A", "B", "U"] as const).map((value) => (
-                <span className="group relative inline-flex" key={value}>
-                  <button
-                    className={`${voteClass} ${nomination.userVote === value ? activeVoteClass : ""}`}
-                    name="value"
-                    value={value}
-                    disabled={!canVote}
-                    type="submit"
-                    title={canVote && nomination.userVote === value ? "Undo your vote" : undefined}
-                    aria-describedby={!canVote && voteDisabledReason ? `${nomination.id}-${value}-detail-vote-disabled` : undefined}
-                    aria-pressed={nomination.userVote === value}
-                  >
-                    <span>{value}</span>
-                    <strong>{value === "A" ? nomination.voteA : value === "B" ? nomination.voteB : nomination.voteU}</strong>
-                  </button>
-                  {!canVote && voteDisabledReason ? <VoteDisabledTip id={`${nomination.id}-${value}-detail-vote-disabled`} text={voteDisabledReason} /> : null}
-                </span>
-              ))}
-            </div>
-            <input className={fieldClass} name="comment" maxLength={400} placeholder="Optional vote comment" disabled={!canVote} />
-          </Form>
-          {decisionRationale}
-          {publishedLink}
-          {canModerate && (canSend || canDeny || canArchive) ? (
-            <Form method="post" className="relative mt-4 grid gap-2.5 border-t border-[#1f242129] pt-3.5">
+          {nomination.type === "reply" ? replyTargetPost : null}
+          {nomination.type === "reply" ? <span className="pointer-events-none absolute top-[calc(50%-18px)] bottom-[calc(50%-18px)] left-8 w-px bg-[#526f8d73]" aria-hidden="true" /> : null}
+          <article className={`relative rounded-lg border border-[#1f242129] bg-[#fffcf4d1] p-[18px] shadow-[0_12px_30px_rgba(31,36,33,0.06)] ${nomination.type === "reply" ? "ml-auto w-[94%] md:w-[88%]" : ""}`}>
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(82,111,141,0.12),transparent_50%),linear-gradient(45deg,transparent,rgba(140,91,74,0.08))]" />
+            <p className="relative m-0 text-xs uppercase tracking-[0.08em] text-[#6e716b]">{nominationTypeLabel(nomination.type)} / {nomination.status}</p>
+            {nomination.type === "repost" ? (
+              <div className="relative mt-4">
+                <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-[#6e716b]"><Repeat2 size={16} aria-hidden="true" /> Repost</p>
+                {targetPost}
+                {motivation}
+              </div>
+            ) : nomination.type === "reply" ? (
+              <>
+                {nomination.text ? <h1 className="relative mt-4 mb-[18px] border-l-2 border-[#526f8d73] pl-4 text-[clamp(1.35rem,3vw,2.25rem)] leading-[1.18] font-medium">{nomination.text}</h1> : null}
+                {media}
+                {motivation}
+              </>
+            ) : (
+              <>
+                <h1 className="relative text-[clamp(1.35rem,3vw,2.25rem)] leading-[1.18] font-medium">{nomination.text ?? nomination.targetTweetUrl}</h1>
+                {media}
+                {motivation}
+                {targetPost}
+              </>
+            )}
+            <Form method="post" className="relative flex flex-wrap gap-2.5">
+              <input type="hidden" name="_intent" value="vote" />
               <input type="hidden" name="nominationId" value={nomination.id} />
-              <textarea className={decisionFieldClass} name="decisionRationale" maxLength={500} defaultValue={nomination.decisionRationale ?? ""} placeholder="Host decision rationale" />
-              <div className="flex flex-wrap gap-2.5">
-                {canSend ? <button className={primaryActionClass} name="_intent" value="send">Send</button> : null}
-                {canMarkSentManually ? (
-                  <>
-                    <button className={secondaryActionClass} type="button" onClick={() => setManualSendOpen(true)}>Sent manually</button>
-                    {manualSendOpen ? (
-                      <div className="fixed inset-0 z-50 grid place-items-center bg-[#1f242166] p-4" role="presentation" onClick={() => setManualSendOpen(false)}>
-                        <div className="grid w-full max-w-[400px] gap-3 rounded-md border border-[#1f242129] bg-[#fffcf4] p-4 shadow-[0_18px_48px_rgba(31,36,33,0.22)]" role="dialog" aria-modal="true" aria-labelledby={`${nomination.id}-manual-send-title`} onClick={(event) => event.stopPropagation()}>
-                          <div className="grid gap-1">
-                            <h2 id={`${nomination.id}-manual-send-title`} className="m-0 text-base font-medium">Sent manually</h2>
-                            <p className="m-0 text-sm text-[#6e716b]">Add the published post URL if you have it.</p>
-                          </div>
-                          <input className={manualUrlClass} name="publishedTweetUrl" type="url" placeholder="Published post URL (optional)" />
-                          <div className="flex flex-wrap justify-end gap-2">
-                            <button className={secondaryActionClass} type="button" onClick={() => setManualSendOpen(false)}>Cancel</button>
-                            <button className={primaryActionClass} name="_intent" value="sent_manually">Confirm</button>
+              <div className="flex gap-2">
+                {(["A", "B", "U"] as const).map((value) => (
+                  <span className="group relative inline-flex" key={value}>
+                    <button
+                      className={`${voteClass} ${nomination.userVote === value ? activeVoteClass : ""}`}
+                      name="value"
+                      value={value}
+                      disabled={!canVote}
+                      type="submit"
+                      title={canVote && nomination.userVote === value ? "Undo your vote" : undefined}
+                      aria-describedby={!canVote && voteDisabledReason ? `${nomination.id}-${value}-detail-vote-disabled` : undefined}
+                      aria-pressed={nomination.userVote === value}
+                    >
+                      <span>{value}</span>
+                      <strong>{value === "A" ? nomination.voteA : value === "B" ? nomination.voteB : nomination.voteU}</strong>
+                    </button>
+                    {!canVote && voteDisabledReason ? <VoteDisabledTip id={`${nomination.id}-${value}-detail-vote-disabled`} text={voteDisabledReason} /> : null}
+                  </span>
+                ))}
+              </div>
+              <input className={voteCommentClass} name="comment" maxLength={400} placeholder="Optional vote comment" disabled={!canVote} />
+            </Form>
+            {decisionRationale}
+            {publishedLink}
+            {canModerate && (canSend || canDeny || canArchive) ? (
+              <Form method="post" className="relative mt-4 grid gap-2.5 border-t border-[#1f242129] pt-3.5">
+                <input type="hidden" name="nominationId" value={nomination.id} />
+                <textarea className={decisionFieldClass} name="decisionRationale" maxLength={500} defaultValue={nomination.decisionRationale ?? ""} placeholder="Host decision rationale" />
+                <div className="flex flex-wrap gap-2.5">
+                  {canSend ? <button className={primaryActionClass} name="_intent" value="send">Send</button> : null}
+                  {canMarkSentManually ? (
+                    <>
+                      <button className={secondaryActionClass} type="button" onClick={() => setManualSendOpen(true)}>Sent manually</button>
+                      {manualSendOpen ? (
+                        <div className="fixed inset-0 z-50 grid place-items-center bg-[#1f242166] p-4" role="presentation" onClick={() => setManualSendOpen(false)}>
+                          <div className="grid w-full max-w-[400px] gap-3 rounded-md border border-[#1f242129] bg-[#fffcf4] p-4 shadow-[0_18px_48px_rgba(31,36,33,0.22)]" role="dialog" aria-modal="true" aria-labelledby={`${nomination.id}-manual-send-title`} onClick={(event) => event.stopPropagation()}>
+                            <div className="grid gap-1">
+                              <h2 id={`${nomination.id}-manual-send-title`} className="m-0 text-base font-medium">Sent manually</h2>
+                              <p className="m-0 text-sm text-[#6e716b]">Add the published post URL if you have it.</p>
+                            </div>
+                            <input className={manualUrlClass} name="publishedTweetUrl" type="url" placeholder="Published post URL (optional)" />
+                            <div className="flex flex-wrap justify-end gap-2">
+                              <button className={secondaryActionClass} type="button" onClick={() => setManualSendOpen(false)}>Cancel</button>
+                              <button className={primaryActionClass} name="_intent" value="sent_manually">Confirm</button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ) : null}
-                  </>
-                ) : null}
-                {canDeny ? <button className={secondaryActionClass} name="_intent" value="deny">Deny</button> : null}
-                {canArchive ? <button className={secondaryActionClass} name="_intent" value="archive">Archive</button> : null}
-              </div>
-            </Form>
-          ) : null}
-        </article>
+                      ) : null}
+                    </>
+                  ) : null}
+                  {canDeny ? <button className={secondaryActionClass} name="_intent" value="deny">Deny</button> : null}
+                  {canArchive ? <button className={secondaryActionClass} name="_intent" value="archive">Archive</button> : null}
+                </div>
+              </Form>
+            ) : null}
+          </article>
         </div>
         <section className="overflow-auto rounded-lg border border-[#1f242129] bg-[#fffcf4ad] p-4">
-          <h2>Vote comments</h2>
+          {/* <h2>Vote comments</h2> */}
           {comments.length ? comments.map((comment, index) => <p key={index}><strong>{comment.value}</strong> @{comment.username}: {comment.comment}</p>) : <p>No vote comments yet.</p>}
         </section>
-        </div>
       </main>
     </AppShell>
   );

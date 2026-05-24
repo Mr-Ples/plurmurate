@@ -1,4 +1,5 @@
 # Plurmurate
+**Note: this repo is mostly vibe coded so use ate your own risk lmao**
 
 | ![murmurate ghibli](./assets/murmurate-ghibli.png) | ![plurmurate-def](./assets/plurmurate-def.png) |
 | :---: | :---: |
