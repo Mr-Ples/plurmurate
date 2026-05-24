@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { NominationStatus } from "~/domain/nominations";
 import { roleNames, type RoleName } from "~/domain/roles";
@@ -242,6 +242,7 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
             and(
               filter.status ? eq(nominations.status, filter.status) : undefined,
               filter.type ? eq(nominations.type, filter.type) : undefined,
+              filter.includeHidden ? undefined : and(ne(nominations.status, "withdrawn"), sql`${nominations.hiddenAt} IS NULL`),
             ),
           )
           .orderBy(desc(nominations.createdAt))

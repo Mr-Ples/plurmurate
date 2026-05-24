@@ -24,11 +24,12 @@ export async function loader({ request, context, params }: any) {
   const user = await getCurrentUser(request, context);
   const repos = getRepositories(context.cloudflare.env);
   const url = new URL(request.url);
-  let nominations = await repos.nominations.listFeed({ viewerUserId: user?.id });
+  const isAdmin = user?.roles.includes("admin") ?? false;
+  let nominations = await repos.nominations.listFeed({ viewerUserId: user?.id, includeHidden: isAdmin });
   let nomination = nominations.find((item) => item.id === params.id);
   if (!nomination) throw new Response("Not found", { status: 404 });
   if (await hydrateMissingTargetTweets(context, [nomination])) {
-    nominations = await repos.nominations.listFeed({ viewerUserId: user?.id });
+    nominations = await repos.nominations.listFeed({ viewerUserId: user?.id, includeHidden: isAdmin });
     nomination = nominations.find((item) => item.id === params.id);
     if (!nomination) throw new Response("Not found", { status: 404 });
   }

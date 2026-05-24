@@ -75,6 +75,7 @@ export interface NominationRepository {
     viewerUserId?: string | null;
     status?: string | null;
     type?: string | null;
+    includeHidden?: boolean;
   }): Promise<FeedNomination[]>;
   qualifyPending(id: string, qualifiedAt: string): Promise<boolean>;
   updateStatus(id: string, status: NominationStatus, fields?: Partial<Nomination>): Promise<void>;

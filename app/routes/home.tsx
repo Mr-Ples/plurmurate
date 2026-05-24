@@ -21,12 +21,15 @@ export async function loader({ request, context }: any) {
   const url = new URL(request.url);
   const users = await repos.users.listUsers();
   const host = users.find((candidate) => candidate.xUserId === settings.hostUserId || candidate.username?.toLowerCase() === settings.hostHandle.toLowerCase()) ?? null;
+  const isAdmin = user?.roles.includes("admin") ?? false;
   let nominations = await repos.nominations.listFeed({
     viewerUserId: user?.id,
+    includeHidden: isAdmin,
   });
   if (await hydrateMissingTargetTweets(context, nominations)) {
     nominations = await repos.nominations.listFeed({
       viewerUserId: user?.id,
+      includeHidden: isAdmin,
     });
   }
   return {
@@ -80,10 +83,11 @@ export async function action({ request, context }: any) {
 
 export default function Home() {
   const { user, settings, nominations, host, publishError } = useLoaderData<typeof loader>();
+  const isAdmin = user?.roles.includes("admin") ?? false;
   const [filters, setFilters] = useState({ status: "", type: "", search: "", sort: "newest" });
   const statusOptions = [
     { value: "", label: "All" },
-    ...nominationStatuses.filter((status) => status !== "draft").map((status) => ({ value: status, label: status })),
+    ...nominationStatuses.filter((status) => status !== "draft" && (isAdmin || status !== "withdrawn")).map((status) => ({ value: status, label: status })),
   ];
   const typeOptions = [{ value: "", label: "All" }, ...settings.enabledNominationTypes.map((type) => ({ value: type, label: nominationTypeLabel(type) }))];
   const sortOptions = [
