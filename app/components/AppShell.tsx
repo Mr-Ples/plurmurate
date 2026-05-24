@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { ExternalLink } from "lucide-react";
 import { Form, Link, useRouteLoaderData } from "react-router";
 import type { loader as rootLoader } from "~/root";
 import type { CurrentUser } from "~/repositories/interfaces";
@@ -59,7 +60,12 @@ export function AppShell({ user, children }: { user: CurrentUser | null; childre
                 </Form>
               </div>
             </details>
-          ) : <Link to="/login">Login</Link>}
+          ) : (
+            <Link className="inline-flex items-center gap-1.5" to="/login">
+              Login
+              <ExternalLink size={15} aria-hidden="true" />
+            </Link>
+          )}
         </nav>
       </header>
       {children}
