@@ -3,7 +3,14 @@ import { isRouteErrorResponse, Link, Links, Meta, Outlet, Scripts, ScrollRestora
 import type { LinksFunction } from "react-router";
 import styles from "./styles/app.css?url";
 
-export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
+export const links: LinksFunction = () => [
+  { rel: "stylesheet", href: styles },
+  { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+  { rel: "icon", href: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+  { rel: "icon", href: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+  { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
+  { rel: "manifest", href: "/site.webmanifest" },
+];
 
 export async function loader({ context }: any) {
   return {
