@@ -10,6 +10,7 @@ export async function evaluateNomination(context: AppLoadContext, nomination: No
   const repos = getRepositories(context.cloudflare.env);
   const settings = await getSettings(context);
   const summary = await repos.votes.getVoteSummary(nomination.id);
+  if (summary.total === 0) return;
   const qualifies =
     thresholdPasses(summary.total, settings.minimumTotalVotes) &&
     thresholdPasses(summary.positiveRatio, settings.minimumPositiveRatio) &&

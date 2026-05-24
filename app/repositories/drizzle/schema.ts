@@ -52,6 +52,7 @@ export const nominations = sqliteTable(
     targetTweetUrl: text("target_tweet_url"),
     targetTweetId: text("target_tweet_id"),
     rationale: text("rationale"),
+    decisionRationale: text("decision_rationale"),
     tweetAvatarMediaId: text("tweet_avatar_media_id"),
     nominationMediaId: text("nomination_media_id"),
     publishedTweetId: text("published_tweet_id"),

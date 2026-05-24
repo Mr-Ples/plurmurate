@@ -42,6 +42,7 @@ function mapNomination(row: any) {
     targetTweetUrl: row.targetTweetUrl,
     targetTweetId: row.targetTweetId,
     rationale: row.rationale,
+    decisionRationale: row.decisionRationale,
     tweetAvatarMediaId: row.tweetAvatarMediaId,
     nominationMediaId: row.nominationMediaId,
     publishedTweetId: row.publishedTweetId,
@@ -209,6 +210,7 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
             targetTweetUrl: input.targetTweetUrl ?? null,
             targetTweetId: input.targetTweetId ?? null,
             rationale: input.rationale ?? null,
+            decisionRationale: input.decisionRationale ?? null,
             tweetAvatarMediaId: input.tweetAvatarMediaId ?? null,
             nominationMediaId: input.nominationMediaId ?? null,
             createdAt: new Date().toISOString(),
@@ -302,6 +304,7 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
             sentAt: fields.sentAt,
             publishedTweetId: fields.publishedTweetId,
             publishedTweetUrl: fields.publishedTweetUrl,
+            decisionRationale: fields.decisionRationale,
             hiddenAt: fields.hiddenAt,
             updatedAt: new Date().toISOString(),
           })

@@ -7,10 +7,13 @@ import { getCurrentUser } from "~/lib/auth/session";
 import { getRepositories } from "~/repositories/drizzle/repositories";
 import { evaluatePendingNominations } from "~/services/approval-service";
 import { hydrateMissingTargetTweets } from "~/services/external-tweet-service";
+import { moderateNomination } from "~/services/nomination-service";
+import { sendQualifiedNomination } from "~/services/publishing-service";
 import { voteOnNomination } from "~/services/vote-service";
 
 const buttonClass = "cursor-pointer rounded-md border border-[#1f2421] bg-[#1f2421] px-3.5 py-2.5 text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-45";
 const fieldClass = "rounded-md border border-[#1f242129] bg-white/45 px-3 py-2.5";
+const decisionFieldClass = "min-h-[92px] w-full rounded-md border border-[#1f242129] bg-white/45 px-3 py-2.5 outline-none focus:border-[#526f8d]";
 const voteClass = "inline-flex h-10 min-w-[62px] cursor-pointer items-center justify-center gap-1.5 rounded-md border border-[#1f242129] bg-white/45 px-3 text-sm font-medium text-[#1f2421] hover:bg-[#fffcf4] disabled:cursor-not-allowed disabled:opacity-45";
 const activeVoteClass = "border-[#496d58] bg-[#496d58] text-[#fffaf0] hover:bg-[#496d58]";
 
@@ -36,6 +39,10 @@ export async function action({ request, context, params }: any) {
   const intent = formData.get("_intent");
   if (intent === "vote") {
     await voteOnNomination(context, user, formData);
+  } else if (intent === "send") {
+    await sendQualifiedNomination(context, String(formData.get("nominationId")), user, String(formData.get("decisionRationale") ?? ""));
+  } else if (["deny", "archive"].includes(String(intent))) {
+    await moderateNomination(context, user, String(formData.get("nominationId")), String(intent), String(formData.get("decisionRationale") ?? ""));
   }
   return redirect(`/nominations/${params.id}`);
 }
@@ -44,7 +51,11 @@ export default function NominationDetail() {
   const { user, nomination, comments } = useLoaderData<typeof loader>();
   const location = useLocation();
   const navigate = useNavigate();
-  const canVote = user?.roles.some((role) => ["voter", "publisher", "host", "admin"].includes(role)) && nomination.status === "pending";
+  const canVote = user?.roles.some((role) => ["voter", "publisher", "host", "admin"].includes(role)) && !["sent", "withdrawn"].includes(nomination.status);
+  const canModerate = user?.roles.some((role) => ["publisher", "host", "admin"].includes(role));
+  const canSend = ["qualified", "approved", "failed"].includes(nomination.status);
+  const canDeny = ["pending", "qualified", "approved", "failed", "denied"].includes(nomination.status);
+  const canArchive = !["withdrawn", "sent"].includes(nomination.status);
   const from = (location.state as { from?: string } | null)?.from;
   const backTo = from?.startsWith("/") ? from : "/";
   const backClass = "inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-md border border-[#1f242129] bg-white/35 px-3 py-2 text-[#1f2421] hover:border-[#1f24214d] hover:bg-[#fffcf4d1]";
@@ -71,6 +82,12 @@ export default function NominationDetail() {
     <div className="relative my-4 rounded-md border border-[#1f242129] bg-white/35 p-3 text-sm leading-snug text-[#526f8d]">
       <p className="m-0 text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Motivation</p>
       <p className="mt-1.5 mb-0 text-[#1f2421]">{nomination.rationale}</p>
+    </div>
+  ) : null;
+  const decisionRationale = nomination.decisionRationale ? (
+    <div className="relative my-4 rounded-md border border-[#1f242129] bg-white/35 p-3 text-sm leading-snug text-[#526f8d]">
+      <p className="m-0 text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Host decision</p>
+      <p className="mt-1.5 mb-0 text-[#1f2421]">{nomination.decisionRationale}</p>
     </div>
   ) : null;
   return (
@@ -136,6 +153,18 @@ export default function NominationDetail() {
             </div>
             <input className={fieldClass} name="comment" maxLength={400} placeholder="Optional vote comment" disabled={!canVote} />
           </Form>
+          {decisionRationale}
+          {canModerate && (canSend || canDeny || canArchive) ? (
+            <Form method="post" className="relative mt-4 grid gap-2.5 border-t border-[#1f242129] pt-3.5">
+              <input type="hidden" name="nominationId" value={nomination.id} />
+              <textarea className={decisionFieldClass} name="decisionRationale" maxLength={500} defaultValue={nomination.decisionRationale ?? ""} placeholder="Host decision rationale" />
+              <div className="flex flex-wrap gap-2.5">
+                {canSend ? <button className={buttonClass} name="_intent" value="send">Send</button> : null}
+                {canDeny ? <button className={buttonClass} name="_intent" value="deny">Deny</button> : null}
+                {canArchive ? <button className={buttonClass} name="_intent" value="archive">Archive</button> : null}
+              </div>
+            </Form>
+          ) : null}
         </article>
         </div>
         <section className="overflow-auto rounded-lg border border-[#1f242129] bg-[#fffcf4ad] p-4">

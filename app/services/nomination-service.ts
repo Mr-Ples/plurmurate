@@ -35,17 +35,23 @@ export async function createNomination(context: AppLoadContext, actor: CurrentUs
   return nomination;
 }
 
-export async function moderateNomination(context: AppLoadContext, actor: CurrentUser, nominationId: string, intent: string) {
+export async function moderateNomination(context: AppLoadContext, actor: CurrentUser, nominationId: string, intent: string, decisionRationale?: string) {
   requirePermission(actor.roles, intent === "send" ? "nomination:send" : "nomination:moderate");
   const repos = getRepositories(context.cloudflare.env);
+  const rationale = cleanDecisionRationale(decisionRationale);
   if (intent === "approve") {
-    await repos.nominations.updateStatus(nominationId, "approved", { approvedAt: new Date().toISOString() });
+    await repos.nominations.updateStatus(nominationId, "approved", { approvedAt: new Date().toISOString(), decisionRationale: rationale });
   } else if (intent === "deny") {
-    await repos.nominations.updateStatus(nominationId, "denied");
+    await repos.nominations.updateStatus(nominationId, "denied", { decisionRationale: rationale });
   } else if (intent === "archive") {
-    await repos.nominations.updateStatus(nominationId, "withdrawn", { hiddenAt: new Date().toISOString() });
+    await repos.nominations.updateStatus(nominationId, "withdrawn", { hiddenAt: new Date().toISOString(), decisionRationale: rationale });
   } else {
     throw new Response("Unknown moderation action", { status: 400 });
   }
-  await repos.auditLogs.create({ actorUserId: actor.id, action: `nomination.${intent}`, entityType: "nomination", entityId: nominationId, metadata: {} });
+  await repos.auditLogs.create({ actorUserId: actor.id, action: `nomination.${intent}`, entityType: "nomination", entityId: nominationId, metadata: { decisionRationale: rationale } });
+}
+
+function cleanDecisionRationale(value: string | undefined) {
+  const trimmed = value?.trim() ?? "";
+  return trimmed ? trimmed.slice(0, 500) : null;
 }

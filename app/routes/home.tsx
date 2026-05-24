@@ -52,11 +52,11 @@ export async function action({ request, context }: any) {
     return null;
   }
   if (formData.get("_intent") === "send") {
-    await sendQualifiedNomination(context, String(formData.get("nominationId")), user);
+    await sendQualifiedNomination(context, String(formData.get("nominationId")), user, String(formData.get("decisionRationale") ?? ""));
     return null;
   }
   if (["deny", "archive"].includes(String(formData.get("_intent")))) {
-    await moderateNomination(context, user, String(formData.get("nominationId")), String(formData.get("_intent")));
+    await moderateNomination(context, user, String(formData.get("nominationId")), String(formData.get("_intent")), String(formData.get("decisionRationale") ?? ""));
     return null;
   }
   const nomination = await createNomination(context, user, formData);

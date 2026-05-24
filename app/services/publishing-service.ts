@@ -31,7 +31,7 @@ export async function getPublishingAccessToken(context: AppLoadContext, hostUser
   return env.X_PUBLISHING_ACCESS_TOKEN || null;
 }
 
-export async function sendQualifiedNomination(context: AppLoadContext, nominationId: string, actor: CurrentUser | null) {
+export async function sendQualifiedNomination(context: AppLoadContext, nominationId: string, actor: CurrentUser | null, decisionRationale?: string) {
   if (actor) requirePermission(actor.roles, "nomination:send");
   const env = context.cloudflare.env;
   const repos = getRepositories(env);
@@ -77,6 +77,7 @@ export async function sendQualifiedNomination(context: AppLoadContext, nominatio
       sentAt: new Date().toISOString(),
       publishedTweetId: response.tweetId,
       publishedTweetUrl: response.url ?? null,
+      decisionRationale: cleanDecisionRationale(decisionRationale),
     });
     await repos.auditLogs.create({ actorUserId: actor?.id ?? null, action: "nomination.send", entityType: "nomination", entityId: nominationId, metadata: response });
   } catch (error) {
@@ -92,4 +93,9 @@ export async function sendQualifiedNomination(context: AppLoadContext, nominatio
     await repos.nominations.updateStatus(nominationId, "failed");
     throw error;
   }
+}
+
+function cleanDecisionRationale(value: string | undefined) {
+  const trimmed = value?.trim() ?? "";
+  return trimmed ? trimmed.slice(0, 500) : null;
 }

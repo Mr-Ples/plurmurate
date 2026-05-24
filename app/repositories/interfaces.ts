@@ -66,6 +66,7 @@ export interface NominationRepository {
     targetTweetUrl?: string | null;
     targetTweetId?: string | null;
     rationale?: string | null;
+    decisionRationale?: string | null;
     tweetAvatarMediaId?: string | null;
     nominationMediaId?: string | null;
   }): Promise<Nomination>;

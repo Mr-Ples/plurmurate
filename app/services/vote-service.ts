@@ -11,7 +11,7 @@ export async function voteOnNomination(context: AppLoadContext, actor: CurrentUs
   const input = voteFormSchema.parse(Object.fromEntries(formData));
   const nomination = await repos.nominations.findById(input.nominationId);
   if (!nomination) throw new Response("Not found", { status: 404 });
-  if (nomination.status !== "pending") throw new Response("Voting is closed", { status: 400 });
+  if (["sent", "withdrawn"].includes(nomination.status)) throw new Response("Voting is closed", { status: 400 });
   const currentVote = await repos.votes.findUserVote(nomination.id, actor.id);
   if (currentVote === input.value) {
     await repos.votes.deleteVote(nomination.id, actor.id);
