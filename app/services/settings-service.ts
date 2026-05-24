@@ -6,10 +6,10 @@ import type { CurrentUser } from "~/repositories/interfaces";
 
 export function envSettings(context: AppLoadContext): Partial<AppSettings> {
   const env = context.cloudflare.env;
-  return {
-    hostUserId: env.X_HOST_USER_ID ?? "",
-    hostHandle: env.X_HOST_HANDLE ?? "",
-  };
+  const settings: Partial<AppSettings> = {};
+  if (env.X_HOST_USER_ID) settings.hostUserId = env.X_HOST_USER_ID;
+  if (env.X_HOST_HANDLE) settings.hostHandle = env.X_HOST_HANDLE;
+  return settings;
 }
 
 export async function getSettings(context: AppLoadContext) {

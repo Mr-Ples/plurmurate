@@ -25,17 +25,6 @@ export const appSettingsSchema = z.object({
   maxImageUploadBytes: z.coerce.number().int().min(1).default(5 * 1024 * 1024),
   hostUserId: z.string().default(""),
   hostHandle: z.string().default(""),
-}).superRefine((settings, context) => {
-  if (settings.publishingWorkflow === "manual_review_when_qualified") return;
-  for (const field of ["minimumTotalVotes", "minimumPositiveRatio", "minimumPositiveMargin"] as const) {
-    if (settings[field] === null) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: [field],
-        message: "This threshold is required when publishing automatically.",
-      });
-    }
-  }
 });
 
 export type AppSettings = z.infer<typeof appSettingsSchema>;

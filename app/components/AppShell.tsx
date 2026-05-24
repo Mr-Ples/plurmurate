@@ -5,7 +5,7 @@ import type { CurrentUser } from "~/repositories/interfaces";
 export function AppShell({ user, children }: { user: CurrentUser | null; children: React.ReactNode }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDetailsElement>(null);
-  const isAdmin = user?.roles.some((role) => ["host", "admin"].includes(role));
+  const isAdmin = user?.roles.includes("admin");
 
   useEffect(() => {
     if (!userMenuOpen) return;

@@ -1,4 +1,5 @@
 import { Info, Send, X } from "lucide-react";
+import { useState } from "react";
 import { Form, redirect, useLoaderData } from "react-router";
 import { AppShell } from "~/components/AppShell";
 import { nominationTypes } from "~/domain/nominations";
@@ -66,8 +67,8 @@ export async function action({ request, context }: any) {
     enabledNominationTypes,
     automaticRoleAssignmentEnabled: formData.get("automaticRoleAssignmentEnabled") === "on",
     maxImageUploadBytes,
-    hostUserId: String(formData.get("hostUserId") ?? ""),
-    hostHandle: String(formData.get("hostHandle") ?? ""),
+    hostUserId: current.hostUserId,
+    hostHandle: current.hostHandle,
   });
   await evaluatePendingNominations(context);
 
@@ -77,6 +78,13 @@ export async function action({ request, context }: any) {
 export default function Settings() {
   const { user, settings, users, visibleNominationCount, discordTest } = useLoaderData<typeof loader>();
   const maxImageUploadMb = Math.max(1, Math.round(settings.maxImageUploadBytes / 1024 / 1024));
+  const [publishingWorkflow, setPublishingWorkflow] = useState(settings.publishingWorkflow);
+  const [minimumTotalVotes, setMinimumTotalVotes] = useState(settings.minimumTotalVotes?.toString() ?? "");
+  const [minimumPositiveRatio, setMinimumPositiveRatio] = useState(settings.minimumPositiveRatio?.toString() ?? "");
+  const [minimumPositiveMargin, setMinimumPositiveMargin] = useState(settings.minimumPositiveMargin?.toString() ?? "");
+  const automaticPublishingWithOptionalQualifications =
+    publishingWorkflow === "auto_send_when_qualified" &&
+    [minimumTotalVotes, minimumPositiveRatio, minimumPositiveMargin].some((value) => value.trim() === "");
 
   return (
     <AppShell user={user}>
@@ -127,15 +135,15 @@ export default function Settings() {
             <div className="grid gap-3">
               <label className={labelClass}>
                 <LabelText text="Minimum votes" info="How many total votes a nomination needs before it can qualify." />
-                <input className={fieldClass} name="minimumTotalVotes" type="number" min={0} defaultValue={settings.minimumTotalVotes ?? ""} />
+                <input className={fieldClass} name="minimumTotalVotes" type="number" min={0} value={minimumTotalVotes} onChange={(event) => setMinimumTotalVotes(event.currentTarget.value)} />
               </label>
               <label className={labelClass}>
                 <LabelText text="Approval percentage" info="The share of positive votes needed. 0.6 means 60%." />
-                <input className={fieldClass} name="minimumPositiveRatio" type="number" min={0} max={1} step="0.01" defaultValue={settings.minimumPositiveRatio ?? ""} />
+                <input className={fieldClass} name="minimumPositiveRatio" type="number" min={0} max={1} step="0.01" value={minimumPositiveRatio} onChange={(event) => setMinimumPositiveRatio(event.currentTarget.value)} />
               </label>
               <label className={labelClass}>
                 <LabelText text="Approval lead" info="How many more positive votes than negative votes are required." />
-                <input className={fieldClass} name="minimumPositiveMargin" type="number" defaultValue={settings.minimumPositiveMargin ?? ""} />
+                <input className={fieldClass} name="minimumPositiveMargin" type="number" value={minimumPositiveMargin} onChange={(event) => setMinimumPositiveMargin(event.currentTarget.value)} />
               </label>
             </div>
           </section>
@@ -145,18 +153,23 @@ export default function Settings() {
             <div className="grid gap-3">
               <label className={labelClass}>
                 <LabelText text="Publishing workflow" info="Choose whether qualified nominations go to review or publish automatically." />
-                <select className={fieldClass} name="publishingWorkflow" defaultValue={settings.publishingWorkflow}>
+                <select className={fieldClass} name="publishingWorkflow" value={publishingWorkflow} onChange={(event) => setPublishingWorkflow(event.currentTarget.value as typeof settings.publishingWorkflow)}>
                   <option value="manual_review_when_qualified">Review before publishing</option>
                   <option value="auto_send_when_qualified">Publish automatically</option>
                 </select>
               </label>
+              {automaticPublishingWithOptionalQualifications ? (
+                <div className="rounded-md border border-[#b9892f66] bg-[#fff2cf] px-3 py-2.5 text-sm leading-snug text-[#6b4a12]">
+                  Blank vote qualifications are ignored. In automatic mode, a pending nomination can publish as soon as the remaining qualifications pass, and if all vote qualifications are blank, one vote can qualify it. Saving reevaluates pending nominations only; already qualified nominations are not automatically posted.
+                </div>
+              ) : null}
               <label className={labelClass}>
-                <LabelText text="Host X user ID" info="The numeric X account ID used as the host account." />
-                <input className={fieldClass} name="hostUserId" defaultValue={settings.hostUserId} />
+                <LabelText text="Host X user ID" info="Configured by X_HOST_USER_ID in the deployment environment. Change it there and redeploy." />
+                <input className={`${fieldClass} text-[#6e716b]`} value={settings.hostUserId} readOnly />
               </label>
               <label className={labelClass}>
-                <LabelText text="Host handle" info="The public X handle shown for the host account." />
-                <input className={fieldClass} name="hostHandle" defaultValue={settings.hostHandle} placeholder="@handle" />
+                <LabelText text="Host handle" info="Configured by X_HOST_HANDLE in the deployment environment. Change it there and redeploy." />
+                <input className={`${fieldClass} text-[#6e716b]`} value={settings.hostHandle} readOnly placeholder="@handle" />
               </label>
               <label className={labelClass}>
                 <LabelText text="Image upload limit" info="Maximum file size per uploaded image, in megabytes." />

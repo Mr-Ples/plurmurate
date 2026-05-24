@@ -123,6 +123,4 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 INSERT OR IGNORE INTO roles (id, name) VALUES
   ('role_spectator', 'spectator'),
   ('role_voter', 'voter'),
-  ('role_publisher', 'publisher'),
-  ('role_host', 'host'),
   ('role_admin', 'admin');

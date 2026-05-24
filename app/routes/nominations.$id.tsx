@@ -62,8 +62,8 @@ export default function NominationDetail() {
   const location = useLocation();
   const navigate = useNavigate();
   const [manualSendOpen, setManualSendOpen] = useState(false);
-  const canVote = user?.roles.some((role) => ["voter", "publisher", "host", "admin"].includes(role)) && !["sent", "withdrawn"].includes(nomination.status);
-  const canModerate = user?.roles.some((role) => ["publisher", "host", "admin"].includes(role));
+  const canVote = user?.roles.some((role) => ["voter", "admin"].includes(role)) && !["sent", "withdrawn"].includes(nomination.status);
+  const canModerate = user?.roles.includes("admin");
   const canSend = ["qualified", "approved", "failed"].includes(nomination.status);
   const canMarkSentManually = !["sent", "withdrawn"].includes(nomination.status);
   const canDeny = ["pending", "qualified", "approved", "failed", "denied"].includes(nomination.status);
@@ -224,7 +224,7 @@ export default function NominationDetail() {
 
 function getVoteDisabledReason(user: { roles: string[] } | null, status: string) {
   if (!user) return "Log in with a voting role to vote.";
-  if (!user.roles.some((role) => ["voter", "publisher", "host", "admin"].includes(role))) return "Your account does not have a voting role.";
+  if (!user.roles.some((role) => ["voter", "admin"].includes(role))) return "Your account does not have a voting role.";
   if (status === "sent") return "Voting is closed because this nomination has been sent.";
   if (status === "withdrawn") return "Voting is closed because this nomination has been archived.";
   return null;

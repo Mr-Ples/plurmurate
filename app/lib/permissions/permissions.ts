@@ -1,12 +1,12 @@
 import type { Permission, RoleName } from "~/domain/roles";
 
 const map: Record<Permission, RoleName[]> = {
-  "nomination:create": ["voter", "publisher", "host", "admin"],
-  "nomination:vote": ["voter", "publisher", "host", "admin"],
-  "nomination:moderate": ["publisher", "host", "admin"],
-  "nomination:send": ["publisher", "host", "admin"],
-  "settings:update": ["host", "admin"],
-  "roles:update": ["host", "admin"],
+  "nomination:create": ["voter", "admin"],
+  "nomination:vote": ["voter", "admin"],
+  "nomination:moderate": ["admin"],
+  "nomination:send": ["admin"],
+  "settings:update": ["admin"],
+  "roles:update": ["admin"],
 };
 
 export function hasPermission(roles: RoleName[], permission: Permission) {

@@ -1,7 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { NominationStatus } from "~/domain/nominations";
-import type { RoleName } from "~/domain/roles";
+import { roleNames, type RoleName } from "~/domain/roles";
 import { appSettingsSchema, defaultSettings, type AppSettings } from "~/domain/settings";
 import type { VoteSummary, VoteValue } from "~/domain/votes";
 import { newId } from "~/lib/utils/id";
@@ -29,7 +29,7 @@ function toCurrentUser(row: any, roleRows: Array<{ name: string }>) {
     displayName: row.displayName,
     profileImageUrl: row.profileImageUrl,
     followersCount: row.followersCount,
-    roles: roleRows.map((role) => role.name as RoleName),
+    roles: roleRows.map((role) => role.name).filter((role): role is RoleName => roleNames.includes(role as RoleName)),
   };
 }
 
@@ -176,7 +176,7 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
     },
     roles: {
       async ensureSeedRoles() {
-        const names: RoleName[] = ["spectator", "voter", "publisher", "host", "admin"];
+        const names: RoleName[] = ["spectator", "voter", "admin"];
         for (const name of names) {
           await db.insert(roles).values({ id: `role_${name}`, name }).onConflictDoNothing().run();
         }
@@ -408,8 +408,8 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
         const stored = row ? JSON.parse(row.valueJson) : {};
         return appSettingsSchema.parse({
           ...defaultSettings,
-          ...envDefaults,
           ...stored,
+          ...envDefaults,
         });
       },
       async updateSettings(value, actorUserId) {
