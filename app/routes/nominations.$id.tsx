@@ -7,7 +7,6 @@ import { getCurrentUser } from "~/lib/auth/session";
 import { getRepositories } from "~/repositories/drizzle/repositories";
 import { evaluatePendingNominations } from "~/services/approval-service";
 import { hydrateMissingTargetTweets } from "~/services/external-tweet-service";
-import { getSettings } from "~/services/settings-service";
 import { voteOnNomination } from "~/services/vote-service";
 
 const buttonClass = "cursor-pointer rounded-md border border-[#1f2421] bg-[#1f2421] px-3.5 py-2.5 text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-45";
@@ -27,7 +26,7 @@ export async function loader({ request, context, params }: any) {
     nomination = nominations.find((item) => item.id === params.id);
     if (!nomination) throw new Response("Not found", { status: 404 });
   }
-  return { user, settings: await getSettings(context), nomination, comments: await repos.votes.listComments(params.id) };
+  return { user, nomination, comments: await repos.votes.listComments(params.id) };
 }
 
 export async function action({ request, context, params }: any) {
@@ -42,11 +41,10 @@ export async function action({ request, context, params }: any) {
 }
 
 export default function NominationDetail() {
-  const { user, settings, nomination, comments } = useLoaderData<typeof loader>();
+  const { user, nomination, comments } = useLoaderData<typeof loader>();
   const location = useLocation();
   const navigate = useNavigate();
-  const isCreator = Boolean(user && nomination.creatorUserId === user.id);
-  const canVote = user?.roles.some((role) => ["voter", "publisher", "host", "admin"].includes(role)) && nomination.status === "pending" && (!isCreator || settings.creatorSelfVoteAllowed);
+  const canVote = user?.roles.some((role) => ["voter", "publisher", "host", "admin"].includes(role)) && nomination.status === "pending";
   const from = (location.state as { from?: string } | null)?.from;
   const backTo = from?.startsWith("/") ? from : "/";
   const backClass = "inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-md border border-[#1f242129] bg-white/35 px-3 py-2 text-[#1f2421] hover:border-[#1f24214d] hover:bg-[#fffcf4d1]";
@@ -116,7 +114,7 @@ export default function NominationDetail() {
               {targetPost}
             </>
           )}
-          <Form method="post" className="relative flex flex-wrap gap-2.5" title={isCreator && !settings.creatorSelfVoteAllowed ? "You cannot vote on your own nomination." : undefined}>
+          <Form method="post" className="relative flex flex-wrap gap-2.5">
             <input type="hidden" name="_intent" value="vote" />
             <input type="hidden" name="nominationId" value={nomination.id} />
             <div className="flex gap-2">

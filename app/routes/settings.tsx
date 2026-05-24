@@ -62,7 +62,6 @@ export async function action({ request, context }: any) {
     minimumPositiveRatio: optionalNumber(formData.get("minimumPositiveRatio")),
     minimumPositiveMargin: optionalNumber(formData.get("minimumPositiveMargin")),
     publishingWorkflow: formData.get("publishingWorkflow"),
-    creatorSelfVoteAllowed: formData.get("creatorSelfVoteAllowed") === "on",
     privilegedVotesCountTowardCriteria: formData.get("privilegedVotesCountTowardCriteria") === "on",
     deniedVisibleByDefault: formData.get("deniedVisibleByDefault") === "on",
     tweetAvatarMode: formData.get("tweetAvatarMode"),
@@ -143,7 +142,6 @@ export default function Settings() {
               </label>
             </div>
             <div className="grid gap-2">
-              <Toggle name="creatorSelfVoteAllowed" defaultChecked={settings.creatorSelfVoteAllowed} title="Creator self-votes" info="Let people vote on nominations they created." />
               <Toggle name="privilegedVotesCountTowardCriteria" defaultChecked={settings.privilegedVotesCountTowardCriteria} title="Staff votes count" info="Count host, admin, and publisher votes toward approval rules." />
               <Toggle name="deniedVisibleByDefault" defaultChecked={settings.deniedVisibleByDefault} title="Show denied nominations" info="Keep denied nominations visible in normal views." />
             </div>

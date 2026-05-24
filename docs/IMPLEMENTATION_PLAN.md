@@ -379,7 +379,6 @@ interface AppSettings {
   minimumPositiveRatio: number;
   minimumPositiveMargin: number;
   publishingWorkflow: PublishingWorkflow;
-  creatorSelfVoteAllowed: boolean;
   privilegedVotesCountTowardCriteria: boolean;
   deniedVisibleByDefault: boolean;
   tweetAvatarMode: TweetAvatarMode;
@@ -396,7 +395,6 @@ Default values:
 - `minimumPositiveMargin`: `2`
 - `publishingWorkflow`: `manual_review_when_qualified`
 - `tweetAvatarMode`: `optional`
-- `creatorSelfVoteAllowed`: `false`
 - `privilegedVotesCountTowardCriteria`: `true`
 - `deniedVisibleByDefault`: `true`
 - `automaticRoleAssignmentEnabled`: `false`

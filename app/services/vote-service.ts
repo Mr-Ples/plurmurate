@@ -4,7 +4,6 @@ import { voteFormSchema } from "~/lib/validation/forms";
 import { getRepositories } from "~/repositories/drizzle/repositories";
 import type { CurrentUser } from "~/repositories/interfaces";
 import { evaluateNomination } from "./approval-service";
-import { getSettings } from "./settings-service";
 
 export async function voteOnNomination(context: AppLoadContext, actor: CurrentUser, formData: FormData) {
   requirePermission(actor.roles, "nomination:vote");
@@ -13,10 +12,6 @@ export async function voteOnNomination(context: AppLoadContext, actor: CurrentUs
   const nomination = await repos.nominations.findById(input.nominationId);
   if (!nomination) throw new Response("Not found", { status: 404 });
   if (nomination.status !== "pending") throw new Response("Voting is closed", { status: 400 });
-  const settings = await getSettings(context);
-  if (!settings.creatorSelfVoteAllowed && nomination.creatorUserId === actor.id) {
-    throw new Response("Creator self-vote is disabled", { status: 400 });
-  }
   const currentVote = await repos.votes.findUserVote(nomination.id, actor.id);
   if (currentVote === input.value) {
     await repos.votes.deleteVote(nomination.id, actor.id);

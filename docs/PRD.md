@@ -177,7 +177,7 @@ Voting rules:
 - Vote comments should be visible on the nomination detail page. Feed cards can show a compact count or recent excerpt.
 - Spectators cannot vote.
 - Hosts, publishers, and admins can optionally vote, but their moderation powers should be separate from their vote.
-- The creator may or may not be allowed to vote on their own nomination. This should be a setting.
+- Creators can vote on their own nominations.
 
 ## 8. Approval Criteria
 
@@ -564,7 +564,6 @@ Suggested settings:
 - Minimum positive margin.
 - Minimum voting age.
 - Maximum voting age.
-- Allow creator self-vote.
 - Allow host/publisher/admin votes.
 - Publishing workflow: automatic or manual publisher review.
 - Enabled nomination types.
@@ -744,7 +743,7 @@ Hardening and production readiness:
   For approval criteria, `A` and `B` are positive votes and `U` is a negative vote.
 
 - Should creators be allowed to vote on their own nominations?
-  Decision: no.
+  Decision: yes.
 
 - Should host/publisher/admin votes count toward criteria?
   Decision: yes.

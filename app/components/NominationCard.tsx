@@ -11,16 +11,13 @@ const activeVoteClass = "border-[#496d58] bg-[#496d58] text-[#fffaf0] hover:bg-[
 export function NominationCard({
   nomination,
   user,
-  creatorSelfVoteAllowed = false,
 }: {
   nomination: FeedNomination;
   user: CurrentUser | null;
-  creatorSelfVoteAllowed?: boolean;
 }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const isCreator = Boolean(user && nomination.creatorUserId === user.id);
-  const canVote = user?.roles.some((role) => ["voter", "publisher", "host", "admin"].includes(role)) && nomination.status === "pending" && (!isCreator || creatorSelfVoteAllowed);
+  const canVote = user?.roles.some((role) => ["voter", "publisher", "host", "admin"].includes(role)) && nomination.status === "pending";
   const canModerate = user?.roles.some((role) => ["publisher", "host", "admin"].includes(role));
   const canSend = ["qualified", "approved", "failed"].includes(nomination.status);
   const canDeny = ["pending", "qualified", "approved", "failed"].includes(nomination.status);
@@ -119,7 +116,7 @@ export function NominationCard({
             <button
               className={`${voteClass} ${nomination.userVote === value ? activeVoteClass : ""}`}
               disabled={!canVote}
-              title={isCreator && !creatorSelfVoteAllowed ? "You cannot vote on your own nomination." : nomination.userVote === value ? "Undo your vote" : undefined}
+              title={nomination.userVote === value ? "Undo your vote" : undefined}
               aria-pressed={nomination.userVote === value}
             >
               <span>{value}</span>
