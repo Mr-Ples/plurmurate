@@ -18,8 +18,6 @@ export const appSettingsSchema = z.object({
   minimumPositiveRatio: optionalManualThreshold(z.coerce.number().min(0).max(1), 0.6),
   minimumPositiveMargin: optionalManualThreshold(z.coerce.number().int(), 2),
   publishingWorkflow: publishingWorkflowSchema.default("manual_review_when_qualified"),
-  privilegedVotesCountTowardCriteria: z.coerce.boolean().default(true),
-  deniedVisibleByDefault: z.coerce.boolean().default(true),
   tweetAvatarMode: tweetAvatarModeSchema.default("optional"),
   includeTweetAvatarInPublishedMedia: z.coerce.boolean().default(false),
   enabledNominationTypes: z.array(z.enum(nominationTypes)).default([...nominationTypes]),

@@ -62,9 +62,6 @@ export async function action({ request, context }: any) {
     minimumPositiveRatio: optionalNumber(formData.get("minimumPositiveRatio")),
     minimumPositiveMargin: optionalNumber(formData.get("minimumPositiveMargin")),
     publishingWorkflow: formData.get("publishingWorkflow"),
-    privilegedVotesCountTowardCriteria: formData.get("privilegedVotesCountTowardCriteria") === "on",
-    deniedVisibleByDefault: formData.get("deniedVisibleByDefault") === "on",
-    tweetAvatarMode: formData.get("tweetAvatarMode"),
     includeTweetAvatarInPublishedMedia: formData.get("includeTweetAvatarInPublishedMedia") === "on",
     enabledNominationTypes,
     automaticRoleAssignmentEnabled: formData.get("automaticRoleAssignmentEnabled") === "on",
@@ -141,10 +138,6 @@ export default function Settings() {
                 <input className={fieldClass} name="minimumPositiveMargin" type="number" defaultValue={settings.minimumPositiveMargin ?? ""} />
               </label>
             </div>
-            <div className="grid gap-2">
-              <Toggle name="privilegedVotesCountTowardCriteria" defaultChecked={settings.privilegedVotesCountTowardCriteria} title="Staff votes count" info="Count host, admin, and publisher votes toward approval rules." />
-              <Toggle name="deniedVisibleByDefault" defaultChecked={settings.deniedVisibleByDefault} title="Show denied nominations" info="Keep denied nominations visible in normal views." />
-            </div>
           </section>
 
           <section className={`${cardClass} grid gap-4`}>
@@ -155,14 +148,6 @@ export default function Settings() {
                 <select className={fieldClass} name="publishingWorkflow" defaultValue={settings.publishingWorkflow}>
                   <option value="manual_review_when_qualified">Review before publishing</option>
                   <option value="auto_send_when_qualified">Publish automatically</option>
-                </select>
-              </label>
-              <label className={labelClass}>
-                <LabelText text="Tweet avatar uploads" info="Controls whether nomination forms can collect an avatar image for the source tweet." />
-                <select className={fieldClass} name="tweetAvatarMode" defaultValue={settings.tweetAvatarMode}>
-                  <option value="disabled">Off</option>
-                  <option value="optional">Optional</option>
-                  <option value="required">Required</option>
                 </select>
               </label>
               <label className={labelClass}>
@@ -179,7 +164,7 @@ export default function Settings() {
               </label>
             </div>
             <div className="grid gap-2">
-              <Toggle name="includeTweetAvatarInPublishedMedia" defaultChecked={settings.includeTweetAvatarInPublishedMedia} title="Use avatars in publish images" info="Include uploaded tweet avatars in generated media for published posts." />
+              <Toggle name="includeTweetAvatarInPublishedMedia" defaultChecked={settings.includeTweetAvatarInPublishedMedia} title="Automatically nominator signature" info="Automatically upload nominator twitter avatar to nominated tweet as an image so people know it wasn't the host that sent the tweet." />
               <Toggle name="automaticRoleAssignmentEnabled" defaultChecked={settings.automaticRoleAssignmentEnabled} title="Automatic role assignment" info="Assign default roles automatically when users sign in." />
             </div>
           </section>
