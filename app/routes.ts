@@ -8,7 +8,6 @@ export default [
   route("logout", "routes/logout.tsx"),
   route("nominations/new", "routes/nominations.new.tsx"),
   route("nominations/:id", "routes/nominations.$id.tsx"),
-  route("review", "routes/review.tsx"),
   route("settings", "routes/settings.tsx"),
   route("settings/roles", "routes/settings.roles.tsx"),
   route("settings/publishing", "routes/settings.publishing.tsx"),

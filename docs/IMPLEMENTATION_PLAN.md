@@ -210,7 +210,6 @@ Statuses:
 - `approved`
 - `sent`
 - `denied`
-- `vetoed`
 - `withdrawn`
 - `failed`
 
@@ -365,7 +364,7 @@ Implementation rules:
 
 - Enforce permissions server-side in services.
 - UI can hide controls, but hidden controls are not security.
-- Audit sensitive actions: role changes, setting updates, vetoes, denies, approvals, sends.
+- Audit sensitive actions: role changes, setting updates, denies, approvals, sends.
 
 ## 8. Settings Model
 
@@ -421,14 +420,13 @@ totalVotes >= minimumTotalVotes
 positiveRatio >= minimumPositiveRatio
 positiveMargin >= minimumPositiveMargin
 status is pending
-not vetoed
 ```
 
 When a nomination qualifies:
 
-- In manual mode, set status to `qualified` and show it in the publisher review queue.
+- In manual mode, set status to `qualified` and show publisher actions on the main feed card.
 - In automatic mode, set status to `qualified`, then call `PublishingService.sendQualifiedNomination`.
-- Queue a Discord notification that the nomination is qualified and ready for review.
+- Queue a Discord notification that the nomination is qualified and ready for publishing.
 
 ## 10. Discord Service
 
@@ -532,7 +530,6 @@ Main app:
 
 Publisher/admin:
 
-- `/review`
 - `/settings`
 - `/settings/roles`
 - `/settings/publishing`
@@ -542,7 +539,7 @@ Route behavior:
 
 - Feed supports filters by status, type, author, and user's vote state.
 - Nomination detail shows vote comments.
-- Review queue shows qualified, failed, denied, and vetoed items relevant to publishers.
+- Main feed cards show send, deny, and archive actions to publishers, hosts, and admins.
 - Settings pages enforce host/admin permissions server-side.
 
 ## 15. UI Direction
@@ -628,7 +625,7 @@ Acceptance criteria:
 Acceptance criteria:
 
 - `LiveXClient` supports the required X endpoints.
-- Manual publisher review can send/deny/veto/archive.
+- Manual publisher review can send/deny/archive from main feed cards.
 - Automatic workflow sends when criteria are met.
 - Publish attempts are logged.
 - Failures move nominations to `failed`.

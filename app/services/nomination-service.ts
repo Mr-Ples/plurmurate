@@ -38,9 +38,14 @@ export async function createNomination(context: AppLoadContext, actor: CurrentUs
 export async function moderateNomination(context: AppLoadContext, actor: CurrentUser, nominationId: string, intent: string) {
   requirePermission(actor.roles, intent === "send" ? "nomination:send" : "nomination:moderate");
   const repos = getRepositories(context.cloudflare.env);
-  if (intent === "approve") await repos.nominations.updateStatus(nominationId, "approved", { approvedAt: new Date().toISOString() });
-  if (intent === "deny") await repos.nominations.updateStatus(nominationId, "denied");
-  if (intent === "veto") await repos.nominations.updateStatus(nominationId, "vetoed");
-  if (intent === "archive") await repos.nominations.updateStatus(nominationId, "withdrawn", { hiddenAt: new Date().toISOString() });
+  if (intent === "approve") {
+    await repos.nominations.updateStatus(nominationId, "approved", { approvedAt: new Date().toISOString() });
+  } else if (intent === "deny") {
+    await repos.nominations.updateStatus(nominationId, "denied");
+  } else if (intent === "archive") {
+    await repos.nominations.updateStatus(nominationId, "withdrawn", { hiddenAt: new Date().toISOString() });
+  } else {
+    throw new Response("Unknown moderation action", { status: 400 });
+  }
   await repos.auditLogs.create({ actorUserId: actor.id, action: `nomination.${intent}`, entityType: "nomination", entityId: nominationId, metadata: {} });
 }

@@ -74,7 +74,6 @@ export interface NominationRepository {
     viewerUserId?: string | null;
     status?: string | null;
     type?: string | null;
-    reviewOnly?: boolean;
   }): Promise<FeedNomination[]>;
   updateStatus(id: string, status: NominationStatus, fields?: Partial<Nomination>): Promise<void>;
   attachMedia(id: string, field: "tweetAvatarMediaId" | "nominationMediaId", mediaId: string): Promise<void>;

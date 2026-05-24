@@ -11,12 +11,10 @@ const activeVoteClass = "border-[#496d58] bg-[#496d58] text-[#fffaf0] hover:bg-[
 export function NominationCard({
   nomination,
   user,
-  review = false,
   creatorSelfVoteAllowed = false,
 }: {
   nomination: FeedNomination;
   user: CurrentUser | null;
-  review?: boolean;
   creatorSelfVoteAllowed?: boolean;
 }) {
   const location = useLocation();
@@ -24,6 +22,9 @@ export function NominationCard({
   const isCreator = Boolean(user && nomination.creatorUserId === user.id);
   const canVote = user?.roles.some((role) => ["voter", "publisher", "host", "admin"].includes(role)) && nomination.status === "pending" && (!isCreator || creatorSelfVoteAllowed);
   const canModerate = user?.roles.some((role) => ["publisher", "host", "admin"].includes(role));
+  const canSend = ["qualified", "approved", "failed"].includes(nomination.status);
+  const canDeny = ["pending", "qualified", "approved", "failed"].includes(nomination.status);
+  const canArchive = !["withdrawn", "sent"].includes(nomination.status);
   const expandedPath = `/nominations/${nomination.id}`;
   const creatorProfileUrl = nomination.creatorUsername ? `https://x.com/${nomination.creatorUsername}` : null;
   const openExpandedView = () => navigate(expandedPath, { state: { from: `${location.pathname}${location.search}` } });
@@ -128,13 +129,12 @@ export function NominationCard({
         ))}
       </div>
       {nomination.recentVoteComment ? <p className="relative text-[#6e716b]">"{nomination.recentVoteComment}"</p> : null}
-      {review && canModerate ? (
+      {canModerate && (canSend || canDeny || canArchive) ? (
         <Form method="post" className="relative mt-4 flex flex-wrap gap-2.5 border-t border-[#1f242129] pt-3.5" onClick={(event) => event.stopPropagation()}>
           <input type="hidden" name="nominationId" value={nomination.id} />
-          <button className={buttonClass} name="_intent" value="send">Send</button>
-          <button className={buttonClass} name="_intent" value="deny">Deny</button>
-          <button className={buttonClass} name="_intent" value="veto">Veto</button>
-          <button className={buttonClass} name="_intent" value="archive">Archive</button>
+          {canSend ? <button className={buttonClass} name="_intent" value="send">Send</button> : null}
+          {canDeny ? <button className={buttonClass} name="_intent" value="deny">Deny</button> : null}
+          {canArchive ? <button className={buttonClass} name="_intent" value="archive">Archive</button> : null}
         </Form>
       ) : null}
     </article>

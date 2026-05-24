@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { NominationStatus } from "~/domain/nominations";
 import type { RoleName } from "~/domain/roles";
@@ -222,7 +222,6 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
         return row ? mapNomination(row) : null;
       },
       async listFeed(filter) {
-        const statusList = filter.reviewOnly ? ["qualified", "failed", "denied", "vetoed"] : null;
         const rows = await db
           .select({
             nomination: nominations,
@@ -240,7 +239,6 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
             and(
               filter.status ? eq(nominations.status, filter.status) : undefined,
               filter.type ? eq(nominations.type, filter.type) : undefined,
-              statusList ? inArray(nominations.status, statusList) : undefined,
             ),
           )
           .orderBy(desc(nominations.createdAt))

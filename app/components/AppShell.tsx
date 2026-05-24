@@ -5,7 +5,6 @@ import type { CurrentUser } from "~/repositories/interfaces";
 export function AppShell({ user, children }: { user: CurrentUser | null; children: React.ReactNode }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDetailsElement>(null);
-  const isPublisher = user?.roles.some((role) => ["publisher", "host", "admin"].includes(role));
   const isAdmin = user?.roles.some((role) => ["host", "admin"].includes(role));
 
   useEffect(() => {
@@ -36,7 +35,6 @@ export function AppShell({ user, children }: { user: CurrentUser | null; childre
                 <span className="text-[0.7rem] text-[#6e716b]" aria-hidden="true">v</span>
               </summary>
               <div className="absolute right-0 z-20 mt-2 grid min-w-44 gap-1 rounded-lg border border-[#1f242129] bg-[#fffcf4] p-2 text-[#1f2421] shadow-[0_14px_34px_rgba(31,36,33,0.14)]">
-                {isPublisher ? <Link className="rounded-md px-3 py-2 hover:bg-[#1f24210d]" to="/review" onClick={() => setUserMenuOpen(false)}>Review</Link> : null}
                 {isAdmin ? <Link className="rounded-md px-3 py-2 hover:bg-[#1f24210d]" to="/settings" onClick={() => setUserMenuOpen(false)}>Settings</Link> : null}
                 <Form method="post" action="/logout" className="m-0 border-t border-[#1f242129] pt-1">
                   <button className="w-full cursor-pointer rounded-md px-3 py-2 text-left text-[#8b3434] hover:bg-[#8b34340f]" type="submit">Logout</button>

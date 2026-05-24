@@ -8,7 +8,6 @@ export const nominationStatuses = [
   "approved",
   "sent",
   "denied",
-  "vetoed",
   "withdrawn",
   "failed",
 ] as const;

@@ -8,10 +8,11 @@ import { getSettings } from "~/services/settings-service";
 import { getCurrentUser } from "~/lib/auth/session";
 import { getRepositories } from "~/repositories/drizzle/repositories";
 import { voteOnNomination } from "~/services/vote-service";
-import { createNomination } from "~/services/nomination-service";
+import { createNomination, moderateNomination } from "~/services/nomination-service";
 import { storeNominationImage } from "~/services/media-service";
 import { hydrateMissingTargetTweets } from "~/services/external-tweet-service";
 import { evaluateNomination, evaluatePendingNominations } from "~/services/approval-service";
+import { sendQualifiedNomination } from "~/services/publishing-service";
 
 export async function loader({ request, context }: any) {
   const user = await getCurrentUser(request, context);
@@ -48,6 +49,14 @@ export async function action({ request, context }: any) {
   const formData = await request.formData();
   if (formData.get("_intent") === "vote") {
     await voteOnNomination(context, user, formData);
+    return null;
+  }
+  if (formData.get("_intent") === "send") {
+    await sendQualifiedNomination(context, String(formData.get("nominationId")), user);
+    return null;
+  }
+  if (["deny", "archive"].includes(String(formData.get("_intent")))) {
+    await moderateNomination(context, user, String(formData.get("nominationId")), String(formData.get("_intent")));
     return null;
   }
   const nomination = await createNomination(context, user, formData);
