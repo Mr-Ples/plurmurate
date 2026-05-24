@@ -292,7 +292,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
               </svg>
               {overLimit || remaining <= 20 ? <span>{remaining}</span> : null}
             </div>
-            {user ? <button className={buttonClass} disabled={postDisabled}>Post</button> : <Link className={`${buttonClass} ${postDisabled ? "pointer-events-none opacity-45" : ""}`} to="/login">Login</Link>}
+            {user ? <button className={buttonClass} disabled={postDisabled}>Post</button> : <Link className={buttonClass} to="/login">Login</Link>}
           </div>
         </div>
       </section>
