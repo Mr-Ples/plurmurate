@@ -364,6 +364,17 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
           })
           .run();
       },
+      async findUserVote(nominationId, userId) {
+        const row = await db
+          .select({ value: votes.value })
+          .from(votes)
+          .where(and(eq(votes.nominationId, nominationId), eq(votes.userId, userId)))
+          .get();
+        return (row?.value as VoteValue | undefined) ?? null;
+      },
+      async deleteVote(nominationId, userId) {
+        await db.delete(votes).where(and(eq(votes.nominationId, nominationId), eq(votes.userId, userId))).run();
+      },
       async getVoteSummary(nominationId): Promise<VoteSummary> {
         return getVoteSummary(nominationId);
       },

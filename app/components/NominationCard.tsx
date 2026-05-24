@@ -115,7 +115,12 @@ export function NominationCard({
             <input type="hidden" name="_intent" value="vote" />
             <input type="hidden" name="nominationId" value={nomination.id} />
             <input type="hidden" name="value" value={value} />
-            <button className={`${voteClass} ${nomination.userVote === value ? activeVoteClass : ""}`} disabled={!canVote} title={isCreator && !creatorSelfVoteAllowed ? "You cannot vote on your own nomination." : undefined}>
+            <button
+              className={`${voteClass} ${nomination.userVote === value ? activeVoteClass : ""}`}
+              disabled={!canVote}
+              title={isCreator && !creatorSelfVoteAllowed ? "You cannot vote on your own nomination." : nomination.userVote === value ? "Undo your vote" : undefined}
+              aria-pressed={nomination.userVote === value}
+            >
               <span>{value}</span>
               <strong>{value === "A" ? nomination.voteA : value === "B" ? nomination.voteB : nomination.voteU}</strong>
             </button>

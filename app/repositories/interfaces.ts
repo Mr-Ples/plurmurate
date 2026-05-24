@@ -104,6 +104,8 @@ export interface VoteRepository {
     value: VoteValue;
     comment?: string | null;
   }): Promise<void>;
+  findUserVote(nominationId: string, userId: string): Promise<VoteValue | null>;
+  deleteVote(nominationId: string, userId: string): Promise<void>;
   getVoteSummary(nominationId: string): Promise<VoteSummary>;
   listComments(nominationId: string): Promise<Array<{ value: VoteValue; comment: string; username: string | null }>>;
 }

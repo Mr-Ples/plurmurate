@@ -17,6 +17,12 @@ export async function voteOnNomination(context: AppLoadContext, actor: CurrentUs
   if (!settings.creatorSelfVoteAllowed && nomination.creatorUserId === actor.id) {
     throw new Response("Creator self-vote is disabled", { status: 400 });
   }
+  const currentVote = await repos.votes.findUserVote(nomination.id, actor.id);
+  if (currentVote === input.value) {
+    await repos.votes.deleteVote(nomination.id, actor.id);
+    await repos.auditLogs.create({ actorUserId: actor.id, action: "vote.delete", entityType: "nomination", entityId: nomination.id, metadata: { value: input.value } });
+    return;
+  }
   await repos.votes.upsertVote({ nominationId: nomination.id, userId: actor.id, value: input.value, comment: input.comment ?? null });
   await repos.auditLogs.create({ actorUserId: actor.id, action: "vote.upsert", entityType: "nomination", entityId: nomination.id, metadata: { value: input.value } });
   await evaluateNomination(context, nomination);

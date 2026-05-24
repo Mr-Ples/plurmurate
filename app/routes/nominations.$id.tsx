@@ -5,6 +5,7 @@ import { TargetTweetCard } from "~/components/TargetTweetCard";
 import { nominationTypeLabel } from "~/domain/nominations";
 import { getCurrentUser } from "~/lib/auth/session";
 import { getRepositories } from "~/repositories/drizzle/repositories";
+import { evaluatePendingNominations } from "~/services/approval-service";
 import { hydrateMissingTargetTweets } from "~/services/external-tweet-service";
 import { getSettings } from "~/services/settings-service";
 import { voteOnNomination } from "~/services/vote-service";
@@ -17,6 +18,7 @@ const activeVoteClass = "border-[#496d58] bg-[#496d58] text-[#fffaf0] hover:bg-[
 export async function loader({ request, context, params }: any) {
   const user = await getCurrentUser(request, context);
   const repos = getRepositories(context.cloudflare.env);
+  await evaluatePendingNominations(context);
   let nominations = await repos.nominations.listFeed({ viewerUserId: user?.id });
   let nomination = nominations.find((item) => item.id === params.id);
   if (!nomination) throw new Response("Not found", { status: 404 });
@@ -119,7 +121,16 @@ export default function NominationDetail() {
             <input type="hidden" name="nominationId" value={nomination.id} />
             <div className="flex gap-2">
               {(["A", "B", "U"] as const).map((value) => (
-                <button key={value} className={`${voteClass} ${nomination.userVote === value ? activeVoteClass : ""}`} name="value" value={value} disabled={!canVote} type="submit">
+                <button
+                  key={value}
+                  className={`${voteClass} ${nomination.userVote === value ? activeVoteClass : ""}`}
+                  name="value"
+                  value={value}
+                  disabled={!canVote}
+                  type="submit"
+                  title={nomination.userVote === value ? "Undo your vote" : undefined}
+                  aria-pressed={nomination.userVote === value}
+                >
                   <span>{value}</span>
                   <strong>{value === "A" ? nomination.voteA : value === "B" ? nomination.voteB : nomination.voteU}</strong>
                 </button>
