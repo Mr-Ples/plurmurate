@@ -26,6 +26,7 @@ export async function loader({ request, context }: any) {
     settings: await getSettings(context),
     users: await repos.users.listUsers(),
     visibleNominationCount: (await repos.nominations.listFeed({ viewerUserId: user?.id })).length,
+    pendingPublishingImpact: await getPendingPublishingImpact(repos),
     discordTest: url.searchParams.get("discordTest"),
   };
 }
@@ -76,7 +77,7 @@ export async function action({ request, context }: any) {
 }
 
 export default function Settings() {
-  const { user, settings, users, visibleNominationCount, discordTest } = useLoaderData<typeof loader>();
+  const { user, settings, users, visibleNominationCount, pendingPublishingImpact, discordTest } = useLoaderData<typeof loader>();
   const maxImageUploadMb = Math.max(1, Math.round(settings.maxImageUploadBytes / 1024 / 1024));
   const [publishingWorkflow, setPublishingWorkflow] = useState(settings.publishingWorkflow);
   const [minimumTotalVotes, setMinimumTotalVotes] = useState(settings.minimumTotalVotes?.toString() ?? "");
@@ -85,6 +86,16 @@ export default function Settings() {
   const automaticPublishingWithOptionalQualifications =
     publishingWorkflow === "auto_send_when_qualified" &&
     [minimumTotalVotes, minimumPositiveRatio, minimumPositiveMargin].some((value) => value.trim() === "");
+  const qualifyingPendingNominations = publishingWorkflow === "auto_send_when_qualified"
+    ? pendingPublishingImpact.filter((nomination) => nominationWouldQualify(nomination.summary, {
+      minimumTotalVotes: parseOptionalThreshold(minimumTotalVotes),
+      minimumPositiveRatio: parseOptionalThreshold(minimumPositiveRatio),
+      minimumPositiveMargin: parseOptionalThreshold(minimumPositiveMargin),
+    }))
+    : [];
+  const qualifyingUrlNominations = qualifyingPendingNominations.filter((nomination) => nomination.hasUrl).length;
+  const estimatedMinimumPublishingCost = qualifyingPendingNominations.length * 0.015;
+  const estimatedMaximumPublishingCost = estimatedMinimumPublishingCost + (qualifyingUrlNominations * 0.2);
 
   return (
     <AppShell user={user}>
@@ -158,9 +169,10 @@ export default function Settings() {
                   <option value="auto_send_when_qualified">Publish automatically</option>
                 </select>
               </label>
-              {automaticPublishingWithOptionalQualifications ? (
+              {publishingWorkflow === "auto_send_when_qualified" ? (
                 <div className="rounded-md border border-[#b9892f66] bg-[#fff2cf] px-3 py-2.5 text-sm leading-snug text-[#6b4a12]">
-                  Blank vote qualifications are ignored. In automatic mode, a pending nomination can publish as soon as the remaining qualifications pass, and if all vote qualifications are blank, one vote can qualify it. Saving reevaluates pending nominations only; already qualified nominations are not automatically posted.
+                  {automaticPublishingWithOptionalQualifications ? "Blank vote qualifications are ignored. A pending nomination can publish as soon as the remaining qualifications pass, and if all vote qualifications are blank, one vote can qualify it. " : null}
+                  Saving reevaluates pending nominations only; already qualified nominations are not automatically posted. Based on the criteria currently shown, {qualifyingPendingNominations.length} pending {qualifyingPendingNominations.length === 1 ? "nomination appears" : "nominations appear"} able to qualify. Automated X API charges could be about {formatUsd(estimatedMinimumPublishingCost)}{qualifyingUrlNominations ? ` to ${formatUsd(estimatedMaximumPublishingCost)}` : ""} if {qualifyingPendingNominations.length === 1 ? "it publishes" : "they publish"}.
                 </div>
               ) : null}
               <label className={labelClass}>
@@ -204,6 +216,42 @@ function optionalNumber(value: FormDataEntryValue | null) {
   if (value === null) return null;
   const trimmed = String(value).trim();
   return trimmed === "" ? null : Number(trimmed);
+}
+
+async function getPendingPublishingImpact(repos: ReturnType<typeof getRepositories>) {
+  const pending = await repos.nominations.listFeed({ status: "pending" });
+  return Promise.all(pending.map(async (nomination) => ({
+    id: nomination.id,
+    hasUrl: nominationHasUrl(nomination),
+    summary: await repos.votes.getVoteSummary(nomination.id),
+  })));
+}
+
+function nominationHasUrl(nomination: { type: string; text: string | null; targetTweetUrl: string | null }) {
+  return nomination.type !== "original" || Boolean(nomination.targetTweetUrl) || /https?:\/\/|www\./i.test(nomination.text ?? "");
+}
+
+function parseOptionalThreshold(value: string) {
+  const trimmed = value.trim();
+  return trimmed === "" ? null : Number(trimmed);
+}
+
+function nominationWouldQualify(
+  summary: { total: number; positiveRatio: number; positiveMargin: number },
+  thresholds: { minimumTotalVotes: number | null; minimumPositiveRatio: number | null; minimumPositiveMargin: number | null },
+) {
+  if (summary.total === 0) return false;
+  return thresholdPasses(summary.total, thresholds.minimumTotalVotes) &&
+    thresholdPasses(summary.positiveRatio, thresholds.minimumPositiveRatio) &&
+    thresholdPasses(summary.positiveMargin, thresholds.minimumPositiveMargin);
+}
+
+function thresholdPasses(value: number, threshold: number | null) {
+  return threshold === null || value >= threshold;
+}
+
+function formatUsd(value: number) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(value);
 }
 
 function SectionHeader({ title }: { title: string }) {
