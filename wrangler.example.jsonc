@@ -20,7 +20,7 @@
 				"STORAGE_PROVIDER": "r2",
 				"X_HOST_USER_ID": "",
 				"X_HOST_HANDLE": "",
-				"GITHUB_REPOSITORY_URL": "https://github.com/Mr-Ples/plurmur",
+				"GITHUB_REPOSITORY_URL": "https://github.com/your/repo",
 				"DISCORD_CHANNEL_ID": ""
 			},
 			"d1_databases": [
@@ -45,7 +45,7 @@
 				"STORAGE_PROVIDER": "r2",
 				"X_HOST_USER_ID": "",
 				"X_HOST_HANDLE": "",
-				"GITHUB_REPOSITORY_URL": "https://github.com/Mr-Ples/plurmur",
+				"GITHUB_REPOSITORY_URL": "https://github.com/your/repo",
 				"DISCORD_CHANNEL_ID": ""
 			},
 			"d1_databases": [

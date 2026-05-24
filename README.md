@@ -57,7 +57,6 @@ SESSION_SECRET=replace-with-at-least-32-random-characters
 X_CLIENT_ID=your-staging-x-oauth-client-id
 X_CLIENT_SECRET=your-staging-x-oauth-client-secret
 DISCORD_BOT_TOKEN=your-discord-bot-token
-DISCORD_CHANNEL_ID=your-discord-channel-id
 ```
 
 Edit `.dev.vars.production`:
@@ -67,7 +66,6 @@ SESSION_SECRET=replace-with-at-least-32-random-characters
 X_CLIENT_ID=your-production-x-oauth-client-id
 X_CLIENT_SECRET=your-production-x-oauth-client-secret
 DISCORD_BOT_TOKEN=your-discord-bot-token
-DISCORD_CHANNEL_ID=your-discord-channel-id
 ```
 
 ## Discord Setup (Optional)
@@ -77,7 +75,7 @@ DISCORD_CHANNEL_ID=your-discord-channel-id
 3. Add a nice description like `Nominate tweets to @accountname here: <insert url>`.
 4. Go to **General Information** and copy the **Application ID**. This is the value used as `client_id` in the invite URL (below).
 5. Go to the **Bot** tab, click **Reset Token**, and copy the token. Paste it into `DISCORD_BOT_TOKEN` in the `.dev.vars` files.
-6. Create a channel in the target Discord server. Copy the channel ID and paste it into `DISCORD_CHANNEL_ID` in the `.dev.vars` files.
+6. Create a channel in the target Discord server. Copy the channel ID and paste it into `DISCORD_CHANNEL_ID` in the `wrangler.jsonc` file.
 7. Invite the bot to the Discord server with an OAuth URL that includes the `bot` scope:
 
 ```text
@@ -125,6 +123,7 @@ Edit `wrangler.jsonc`:
 - Set the `database_id` printed by `npx wrangler d1 create plurmurate`.
 - Set the host account vars `X_HOST_HANDLE` and `X_HOST_USER_ID` (find id here: https://twxpicker.com/user-id-finder)
 - Set `DISCORD_CHANNEL_ID` if Discord notifications should be enabled locally or in staging.
+- Set `GITHUB_REPOSITORY_URL` to your GitHub repository URL (for the icon in the topbar).
 
 Apply migrations to the local D1 database, then start the dev server:
 
@@ -153,6 +152,7 @@ npx wrangler r2 bucket create plurmurate-media-production
 Edit `wrangler.jsonc`:
 - Set the `database_id` printed by `npx wrangler d1 create plurmurate-production`.
 - Set `DISCORD_CHANNEL_ID` if Discord notifications should be enabled in production.
+- Set `GITHUB_REPOSITORY_URL` to your GitHub repository URL (for the icon in the topbar).
 
 Upload production secrets:
 

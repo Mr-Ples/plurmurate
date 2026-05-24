@@ -2,10 +2,5 @@ SESSION_SECRET=replace-with-at-least-32-random-characters
 
 X_CLIENT_ID=your-staging-x-oauth-client-id
 X_CLIENT_SECRET=your-staging-x-oauth-client-secret
-X_HOST_USER_ID=1521528464154808323
-X_HOST_HANDLE=evalladen
-X_PUBLISHING_ACCESS_TOKEN=
-X_PUBLISHING_REFRESH_TOKEN=
-GITHUB_REPOSITORY_URL=https://github.com/Mr-Ples/plurmur
+
 DISCORD_BOT_TOKEN=
-DISCORD_CHANNEL_ID=
