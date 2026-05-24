@@ -6,6 +6,11 @@
 Plurmurate is a community nomination and voting tool for deciding what a shared X/Twitter account should post, quote, repost, or reply to. Users authenticate with X, submit proposed posts as nominations, and vote on nominations using the A/B/U rating system developed by [Defender](https://x.com/DefenderOfBasic):
 
 ![abu_rating](./assets/ABU.jpeg)
+# Roadmap
+
+1. Support polls and other post subtleties that are not covered by plain text/media, quote, repost, and reply nominations.
+2. Add support for paid partnership posts with various billing options.
+3. Add an avatar signature that dynamically combines the host avatar with the nominator avatar, potentially using AI-assisted image generation.
 
 # Setup
 
@@ -23,6 +28,7 @@ For both apps, configure user authentication:
 
 - App permissions: **Read and write**.
   - Do not choose **Read and write and Direct message**.
+- OAuth scopes: include the scopes needed for login, reading users/posts, offline token refresh, and posting (`tweet.read`, `tweet.write`, `users.read`, `offline.access`). No Direct Message scope is needed.
 - Type of App: **Web App, Automated App or Bot**.
   - Do not choose **Native App**.
 - Use any temporary placeholder URL for now until the app has been deployed or tunneled.
@@ -65,14 +71,14 @@ DISCORD_CHANNEL_ID=your-discord-channel-id
 7. Invite the bot to the Discord server with an OAuth URL that includes the `bot` scope:
 
 ```text
-https://discord.com/oauth2/authorize?client_id=YOUR_APPLICATION_ID&scope=bot%20applications.commands&permissions=18432
+https://discord.com/oauth2/authorize?client_id=YOUR_APPLICATION_ID&scope=bot%20applications.commands&permissions=19456
 ```
 
 Replace `YOUR_APPLICATION_ID` with the Application ID from step 4.
 
 The `bot` scope is required to add the bot user to the server. `applications.commands` alone only installs commands and will not make the bot appear as a server member.
 
-The permission value above includes:
+The permission value above is `19456`, which includes:
 
   - View Channel
   - Send Messages
@@ -186,3 +192,24 @@ Apply production migrations and deploy:
 npm run db:migrate:production:remote
 npm run deploy:production
 ```
+
+# Notes
+
+## Discord bot info
+
+Users log in with X and nominate one of four post types:
+
+- **text post**: original text and optional media for the host account.
+- **quote tweet**: text plus a target X post URL.
+- **repost**: a target X post URL, with no additional text or media.
+- **reply**: text plus the X post URL being replied to.
+
+When a target X post is entered, Plurmurate stores the URL and attempts to cache an X/oEmbed preview so voters can inspect the target from inside the feed. Submitted nominations start as pending, then the approval service evaluates the current A/B/U vote totals against the configured criteria. Qualified nominations are ready for host review. Admins can send qualified nominations automatically through the host X account, mark them as sent manually, deny them, or archive them.
+
+If Discord is configured, the bot sends channel notifications when:
+
+- a new nomination is submitted;
+- a nomination qualifies for review;
+- a nomination is sent or marked sent manually.
+
+Discord notifications include links to the target post, published post when available, the host X account when `X_HOST_HANDLE` is configured, and the submitting or sending X account when Plurmurate knows the username. The Discord bot invite must include **View Channel**, **Send Messages**, and **Embed Links** so those links and X previews render cleanly in Discord.

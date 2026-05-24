@@ -86,7 +86,7 @@ export async function sendQualifiedNomination(context: AppLoadContext, nominatio
       nomination,
       actor,
       publishedUrl: response.url ?? null,
-      manual: actor !== null,
+      manual: false,
     });
   } catch (error) {
     await repos.publishAttempts.create({

@@ -1,6 +1,8 @@
-import { Image, Info, X } from "lucide-react";
+import { Image, Info, Repeat2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Form, Link } from "react-router";
+import { TargetTweetCard } from "~/components/TargetTweetCard";
+import type { ExternalTweetPreview } from "~/domain/external-tweets";
 import { nominationTypeLabel, type NominationType } from "~/domain/nominations";
 import type { AppSettings } from "~/domain/settings";
 import type { CurrentUser } from "~/repositories/interfaces";
@@ -21,6 +23,8 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
   const [selectedType, setSelectedType] = useState<NominationType>(settings.enabledNominationTypes[0] ?? "original");
   const [text, setText] = useState("");
   const [targetTweetUrl, setTargetTweetUrl] = useState("");
+  const [targetPreview, setTargetPreview] = useState<ExternalTweetPreview | null>(null);
+  const [targetPreviewState, setTargetPreviewState] = useState<"idle" | "loading" | "failed">("idle");
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const [posting, setPosting] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -42,10 +46,48 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
     ? `${selectedImages.length} image${selectedImages.length === 1 ? "" : "s"} selected`
     : "Add media";
   const mediaLimitReached = selectedImages.length >= maxPreviewImages;
+  const parsedTarget = parseDraftTweetUrl(targetTweetUrl);
+  const targetPreviewCard = needsTargetUrl && parsedTarget ? (
+    <DraftTargetPreview
+      tweet={targetPreview}
+      fallbackUrl={parsedTarget.url}
+      fallbackId={parsedTarget.tweetId}
+      state={targetPreviewState}
+    />
+  ) : null;
 
   useEffect(() => {
     selectedImagesRef.current = selectedImages;
   }, [selectedImages]);
+
+  useEffect(() => {
+    setTargetPreview(null);
+    setTargetPreviewState("idle");
+    if (!needsTargetUrl || !parsedTarget) return;
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      setTargetPreviewState("loading");
+      fetch(`/target-tweet-preview?url=${encodeURIComponent(parsedTarget.url)}`, { signal: controller.signal })
+        .then((response) => {
+          if (!response.ok) throw new Error(`Preview failed: ${response.status}`);
+          return response.json() as Promise<{ tweet: ExternalTweetPreview | null }>;
+        })
+        .then((data) => {
+          setTargetPreview(data.tweet);
+          setTargetPreviewState(data.tweet ? "idle" : "failed");
+        })
+        .catch((error) => {
+          if (error instanceof DOMException && error.name === "AbortError") return;
+          setTargetPreviewState("failed");
+        });
+    }, 350);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [needsTargetUrl, parsedTarget?.tweetId, parsedTarget?.url]);
 
   useEffect(() => {
     return () => {
@@ -130,32 +172,40 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
         )}
         <div className="min-w-0">
           <label className={srOnlyClass} htmlFor="nomination-text">Post text</label>
-          <div className={`relative h-[138px] ${isRepost ? "opacity-50" : ""}`}>
-            {text ? (
-              <div
-                className="pointer-events-none absolute inset-0 h-[138px] overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-transparent bg-transparent p-2 text-[1.18rem] leading-[1.4] text-transparent [scrollbar-gutter:stable]"
-                aria-hidden="true"
-                ref={highlightRef}
-              >
-                <span>{text.slice(0, limit)}</span>
-                {overLimit ? <mark className="rounded-[2px] bg-[#d9444433] text-transparent">{text.slice(limit)}</mark> : null}
-              </div>
-            ) : null}
-            <textarea
-              id="nomination-text"
-              name="text"
-              rows={5}
-              placeholder="What's happening?"
-              value={text}
-              disabled={isRepost}
-              required={!isRepost}
-              onChange={(event) => setText(event.currentTarget.value)}
-              onScroll={(event) => {
-                if (highlightRef.current) highlightRef.current.scrollTop = event.currentTarget.scrollTop;
-              }}
-              className="relative z-10 h-[138px] w-full resize-none overflow-y-auto rounded-md border border-transparent bg-transparent p-2 text-[1.18rem] leading-[1.4] text-[#1f2421] outline-none placeholder:text-[#6e716b] [scrollbar-gutter:stable]"
-            />
-          </div>
+          {selectedType === "reply" ? targetPreviewCard : null}
+          {isRepost ? (
+            <div className="min-h-[138px] rounded-md border border-[#1f242114] bg-[#1f242108] p-2">
+              <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-[#6e716b]"><Repeat2 size={16} aria-hidden="true" /> Repost</p>
+              {targetPreviewCard ?? <p className="m-0 grid min-h-[82px] place-items-center rounded-md border border-dashed border-[#1f242129] text-sm text-[#6e716b]">Add a target X post URL below.</p>}
+              <input type="hidden" name="text" value="" />
+            </div>
+          ) : (
+            <div className="relative h-[138px]">
+              {text ? (
+                <div
+                  className="pointer-events-none absolute inset-0 h-[138px] overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-transparent bg-transparent p-2 text-[1.18rem] leading-[1.4] text-transparent [scrollbar-gutter:stable]"
+                  aria-hidden="true"
+                  ref={highlightRef}
+                >
+                  <span>{text.slice(0, limit)}</span>
+                  {overLimit ? <mark className="rounded-[2px] bg-[#d9444433] text-transparent">{text.slice(limit)}</mark> : null}
+                </div>
+              ) : null}
+              <textarea
+                id="nomination-text"
+                name="text"
+                rows={5}
+                placeholder="What's happening?"
+                value={text}
+                required
+                onChange={(event) => setText(event.currentTarget.value)}
+                onScroll={(event) => {
+                  if (highlightRef.current) highlightRef.current.scrollTop = event.currentTarget.scrollTop;
+                }}
+                className="relative z-10 h-[138px] w-full resize-none overflow-y-auto rounded-md border border-transparent bg-transparent p-2 text-[1.18rem] leading-[1.4] text-[#1f2421] outline-none placeholder:text-[#6e716b] [scrollbar-gutter:stable]"
+              />
+            </div>
+          )}
           {selectedImages.length ? (
             <div
               className={`mt-3 grid overflow-hidden rounded-xl border border-[#1f242129] bg-[#1f24210a] ${
@@ -194,6 +244,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
               ))}
             </div>
           ) : null}
+          {selectedType === "quote" ? targetPreviewCard : null}
           <div className="flex items-center gap-2.5 border-t border-[#1f242129] pt-3">
             {isRepost ? (
               <span className={`${iconButtonClass} cursor-not-allowed border-[#1f242114] bg-[#1f24210a] text-[#6e716b] opacity-30 grayscale`} title="Reposts cannot include media" aria-disabled="true">
@@ -298,4 +349,39 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
       </label>
     </Form>
   );
+}
+
+function DraftTargetPreview({
+  tweet,
+  fallbackUrl,
+  fallbackId,
+  state,
+}: {
+  tweet: ExternalTweetPreview | null;
+  fallbackUrl: string;
+  fallbackId: string;
+  state: "idle" | "loading" | "failed";
+}) {
+  return (
+    <div className="relative">
+      <TargetTweetCard tweet={tweet} fallbackUrl={fallbackUrl} fallbackId={fallbackId} />
+      {state === "loading" ? <p className="mt-2 mb-0 text-xs text-[#6e716b]">Loading X post preview...</p> : null}
+      {state === "failed" ? <p className="mt-2 mb-0 text-xs text-[#6e716b]">Preview unavailable. The URL will still be attached.</p> : null}
+    </div>
+  );
+}
+
+function parseDraftTweetUrl(value: string) {
+  try {
+    const url = new URL(value.trim());
+    const host = url.hostname.replace(/^www\./, "");
+    if (host !== "x.com" && host !== "twitter.com") return null;
+    const parts = url.pathname.split("/").filter(Boolean);
+    const statusIndex = parts.findIndex((part) => part === "status");
+    const tweetId = statusIndex >= 0 ? parts[statusIndex + 1] : null;
+    if (!tweetId || !/^\d+$/.test(tweetId)) return null;
+    return { tweetId, url: value.trim() };
+  } catch {
+    return null;
+  }
 }

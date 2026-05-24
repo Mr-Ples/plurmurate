@@ -7,6 +7,7 @@ import type { CurrentUser } from "~/repositories/interfaces";
 type DiscordEnv = {
   DISCORD_BOT_TOKEN?: string;
   DISCORD_CHANNEL_ID?: string;
+  X_HOST_HANDLE?: string;
 };
 
 type DiscordNotification =
@@ -66,7 +67,7 @@ async function reserveAndSendDiscordNotification(context: AppLoadContext, notifi
 }
 
 async function sendDiscordNotification(env: DiscordEnv, notification: DiscordNotification) {
-  return sendDiscordMessage(env, buildDiscordMessage(notification));
+  return sendDiscordMessage(env, buildDiscordMessage(env, notification));
 }
 
 async function sendDiscordMessage(env: DiscordEnv, message: unknown) {
@@ -84,7 +85,7 @@ async function sendDiscordMessage(env: DiscordEnv, message: unknown) {
   }
 }
 
-function buildDiscordMessage(notification: DiscordNotification) {
+function buildDiscordMessage(env: DiscordEnv, notification: DiscordNotification) {
   const nomination = notification.nomination;
   const title = notification.kind === "new_nomination" ? "New nomination" : notification.kind === "nomination_qualified" ? "Nomination qualified" : "Nomination sent";
   const description = nomination.text || nomination.targetTweetUrl || nomination.rationale || "No text provided.";
@@ -92,10 +93,11 @@ function buildDiscordMessage(notification: DiscordNotification) {
     { name: "Type", value: nominationTypeLabel(nomination.type), inline: true },
     { name: "Status", value: notification.kind === "new_nomination" ? nomination.status : notification.kind === "nomination_qualified" ? "qualified" : "sent", inline: true },
   ];
+  const hostAccount = xAccountLink(env.X_HOST_HANDLE);
 
   if (notification.kind === "new_nomination") {
     const name = notification.actor.displayName || notification.actor.username || notification.actor.xUserId;
-    fields.push({ name: "Submitted by", value: notification.actor.username ? `@${notification.actor.username}` : name, inline: true });
+    fields.push({ name: "Submitted by", value: xAccountLink(notification.actor.username) ?? name, inline: true });
   } else if (notification.kind === "nomination_qualified") {
     fields.push(
       { name: "Votes", value: `A ${notification.summary.a} / B ${notification.summary.b} / U ${notification.summary.u}`, inline: true },
@@ -106,10 +108,12 @@ function buildDiscordMessage(notification: DiscordNotification) {
     fields.push({ name: "Method", value: notification.manual ? "Manual" : "Automatic", inline: true });
     if (notification.actor) {
       const name = notification.actor.displayName || notification.actor.username || notification.actor.xUserId;
-      fields.push({ name: "Sent by", value: notification.actor.username ? `@${notification.actor.username}` : name, inline: true });
+      fields.push({ name: "Sent by", value: xAccountLink(notification.actor.username) ?? name, inline: true });
     }
-    if (notification.publishedUrl) fields.push({ name: "Published post", value: notification.publishedUrl, inline: false });
+    if (notification.publishedUrl) fields.push({ name: "Published post", value: link("Open on X", notification.publishedUrl), inline: false });
   }
+  if (nomination.targetTweetUrl) fields.push({ name: "Target post", value: link("Open target on X", nomination.targetTweetUrl), inline: false });
+  if (hostAccount) fields.push({ name: "Host account", value: hostAccount, inline: true });
 
   return {
     content: notification.kind === "new_nomination"
@@ -131,4 +135,14 @@ function buildDiscordMessage(notification: DiscordNotification) {
 function truncate(value: string, maxLength: number) {
   if (value.length <= maxLength) return value;
   return `${value.slice(0, maxLength - 1)}...`;
+}
+
+function xAccountLink(handle: string | null | undefined) {
+  const cleanHandle = handle?.replace(/^@/, "").trim();
+  if (!cleanHandle) return null;
+  return link(`@${cleanHandle}`, `https://x.com/${cleanHandle}`);
+}
+
+function link(label: string, url: string) {
+  return `[${label}](${url})`;
 }
