@@ -109,7 +109,7 @@ export interface VoteRepository {
   findUserVote(nominationId: string, userId: string): Promise<VoteValue | null>;
   deleteVote(nominationId: string, userId: string): Promise<void>;
   getVoteSummary(nominationId: string): Promise<VoteSummary>;
-  listComments(nominationId: string): Promise<Array<{ value: VoteValue; comment: string; username: string | null }>>;
+  listComments(nominationId: string): Promise<Array<{ value: VoteValue; comment: string; username: string | null; profileImageUrl: string | null }>>;
 }
 
 export interface SettingsRepository {

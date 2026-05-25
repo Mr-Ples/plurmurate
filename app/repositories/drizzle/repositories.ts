@@ -411,7 +411,7 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
       },
       async listComments(nominationId) {
         return db
-          .select({ value: votes.value, comment: votes.comment, username: users.username })
+          .select({ value: votes.value, comment: votes.comment, username: users.username, profileImageUrl: users.profileImageUrl })
           .from(votes)
           .innerJoin(users, eq(votes.userId, users.id))
           .where(and(eq(votes.nominationId, nominationId), sql`${votes.comment} IS NOT NULL AND ${votes.comment} != ''`))

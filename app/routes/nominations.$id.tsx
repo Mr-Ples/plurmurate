@@ -222,7 +222,25 @@ export default function NominationDetail() {
         </div>
         <section className="overflow-auto rounded-lg border border-[#1f242129] bg-[#fffcf4ad] p-4">
           {/* <h2>Vote comments</h2> */}
-          {comments.length ? comments.map((comment, index) => <p key={index}><strong>{comment.value}</strong> @{comment.username}: {comment.comment}</p>) : <p>No vote comments yet.</p>}
+          {comments.length ? (
+            <div className="grid gap-3">
+              {comments.map((comment, index) => (
+                <div className="grid grid-cols-[36px_minmax(0,1fr)] gap-3" key={index}>
+                  {comment.profileImageUrl ? (
+                    <img className="h-9 w-9 rounded-full bg-[#ddd4c5] object-cover" src={comment.profileImageUrl} alt="" />
+                  ) : (
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#1f242129] bg-[#ddd4c5] text-sm font-semibold text-[#6e716b]" aria-hidden="true">
+                      {comment.username?.[0]?.toUpperCase() ?? "?"}
+                    </span>
+                  )}
+                  <div className="min-w-0">
+                    <p className="m-0 text-sm text-[#6e716b]"><strong className="text-[#1f2421]">{comment.value}</strong> @{comment.username ?? "unknown"}</p>
+                    <p className="mt-1 mb-0 break-words text-[#1f2421]">{comment.comment}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : <p>No vote comments yet.</p>}
         </section>
       </main>
     </AppShell>

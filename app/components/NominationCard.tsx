@@ -161,7 +161,6 @@ export function NominationCard({
         <input className={voteCommentClass} name="comment" maxLength={400} placeholder="Optional vote comment" disabled={!canVote} />
         {ratingInfoOpen ? <AbuRatingDialog onClose={() => setRatingInfoOpen(false)} /> : null}
       </Form>
-      {nomination.recentVoteComment ? <p className="relative text-[#6e716b]">"{nomination.recentVoteComment}"</p> : null}
       {decisionRationale}
       {publishedLink}
       {canModerate && (canSend || canDeny || canArchive) ? (
