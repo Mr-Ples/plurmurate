@@ -2,9 +2,9 @@ import { Info, Plus, Send, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { Form, redirect, useLoaderData } from "react-router";
 import { AppShell } from "~/components/AppShell";
-import { nominationTypes } from "~/domain/nominations";
+import { nominationStatuses, nominationTypes, type NominationStatus } from "~/domain/nominations";
 import { roleNames, type RoleName } from "~/domain/roles";
-import type { AppSettings } from "~/domain/settings";
+import { visibleFeedStatusesForRoles, type AppSettings } from "~/domain/settings";
 import { getCurrentUser } from "~/lib/auth/session";
 import { requirePermission } from "~/lib/permissions/permissions";
 import { newId } from "~/lib/utils/id";
@@ -23,11 +23,12 @@ export async function loader({ request, context }: any) {
   const user = await getCurrentUser(request, context);
   const repos = getRepositories(context.cloudflare.env);
   const url = new URL(request.url);
+  const settings = await getSettings(context);
   return {
     user,
-    settings: await getSettings(context),
+    settings,
     users: await repos.users.listUsers(),
-    visibleNominationCount: (await repos.nominations.listFeed({ viewerUserId: user?.id })).length,
+    visibleNominationCount: await getVisibleNominationCount(repos, settings, user?.roles),
     pendingPublishingImpact: await getPendingPublishingImpact(repos),
     discordTest: url.searchParams.get("discordTest"),
   };
@@ -75,6 +76,7 @@ export async function action({ request, context }: any) {
     publishingWorkflow: "manual_review_when_qualified",
     includeTweetAvatarInPublishedMedia: formData.get("includeTweetAvatarInPublishedMedia") === "on",
     enabledNominationTypes,
+    roleFeedVisibility: readRoleFeedVisibility(formData),
     maxImageUploadBytes,
     hostUserId: current.hostUserId,
     hostHandle: current.hostHandle,
@@ -316,6 +318,31 @@ export default function Settings() {
             </div>
           </section>
 
+          <section className={`${cardClass} grid gap-4 lg:col-span-3`}>
+            <div className="grid gap-1">
+              <SectionHeader title="Feed Visibility" />
+              <p className="m-0 text-sm text-[#6e716b]">Choose which nomination statuses each role can see in the feed and nomination detail pages.</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              {roleNames.map((role) => (
+                <div key={role} className="grid content-start gap-2">
+                  <h3 className="m-0 text-base font-medium capitalize">{role}</h3>
+                  <div className="grid gap-2">
+                    {visibleStatusOptions.map((status) => (
+                      <Toggle
+                        key={status}
+                        name={`roleFeedVisibility.${role}.${status}`}
+                        defaultChecked={settings.roleFeedVisibility[role].includes(status)}
+                        title={statusLabel(status)}
+                        info={`Allow ${role} users to see ${statusLabel(status).toLowerCase()} nominations in the feed.`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
           <div className="sticky bottom-3 z-10 flex justify-end lg:col-span-3">
             <button className={buttonClass}>Save settings</button>
           </div>
@@ -329,6 +356,26 @@ function optionalNumber(value: FormDataEntryValue | null) {
   if (value === null) return null;
   const trimmed = String(value).trim();
   return trimmed === "" ? null : Number(trimmed);
+}
+
+const visibleStatusOptions = nominationStatuses.filter((status) => status !== "draft");
+
+function readRoleFeedVisibility(formData: FormData): AppSettings["roleFeedVisibility"] {
+  return {
+    spectator: readVisibleStatuses(formData, "spectator"),
+    voter: readVisibleStatuses(formData, "voter"),
+    admin: readVisibleStatuses(formData, "admin"),
+  };
+}
+
+function readVisibleStatuses(formData: FormData, role: RoleName): NominationStatus[] {
+  return visibleStatusOptions.filter((status) => formData.get(`roleFeedVisibility.${role}.${status}`) === "on");
+}
+
+function statusLabel(status: NominationStatus) {
+  if (status === "sent") return "Sent";
+  if (status === "withdrawn") return "Archived";
+  return status[0].toUpperCase() + status.slice(1);
 }
 
 function updateAutomaticRoleSettings(current: AppSettings, formData: FormData, intent: string): AppSettings {
@@ -402,6 +449,13 @@ async function getPendingPublishingImpact(repos: ReturnType<typeof getRepositori
     hasUrl: nominationHasUrl(nomination),
     summary: await repos.votes.getVoteSummary(nomination.id),
   })));
+}
+
+async function getVisibleNominationCount(repos: ReturnType<typeof getRepositories>, settings: AppSettings, roles: RoleName[] | undefined) {
+  const visibleStatuses = new Set(visibleFeedStatusesForRoles(settings, roles));
+  const includeHidden = roles?.includes("admin") ?? false;
+  const nominations = await repos.nominations.listFeed({ includeHidden });
+  return nominations.filter((nomination) => visibleStatuses.has(nomination.status)).length;
 }
 
 function nominationHasUrl(nomination: { type: string; text: string | null; targetTweetUrl: string | null }) {

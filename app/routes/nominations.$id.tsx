@@ -5,9 +5,11 @@ import { AbuRatingDialog } from "~/components/AbuRatingDialog";
 import { AppShell } from "~/components/AppShell";
 import { TargetTweetCard } from "~/components/TargetTweetCard";
 import { nominationTypeLabel } from "~/domain/nominations";
+import { visibleFeedStatusesForRoles } from "~/domain/settings";
 import { getCurrentUser } from "~/lib/auth/session";
 import { getRepositories } from "~/repositories/drizzle/repositories";
 import { hydrateMissingTargetTweets } from "~/services/external-tweet-service";
+import { getSettings } from "~/services/settings-service";
 import { moderateNomination } from "~/services/nomination-service";
 import { isXCreditsDepletedError, markNominationSentManually, sendQualifiedNomination } from "~/services/publishing-service";
 import { voteOnNomination } from "~/services/vote-service";
@@ -27,11 +29,15 @@ export async function loader({ request, context, params }: any) {
   const repos = getRepositories(context.cloudflare.env);
   const url = new URL(request.url);
   const isAdmin = user?.roles.includes("admin") ?? false;
+  const settings = await getSettings(context);
+  const visibleStatuses = new Set(visibleFeedStatusesForRoles(settings, user?.roles));
   let nominations = await repos.nominations.listFeed({ viewerUserId: user?.id, includeHidden: isAdmin });
+  nominations = nominations.filter((item) => visibleStatuses.has(item.status));
   let nomination = nominations.find((item) => item.id === params.id);
   if (!nomination) throw new Response("Not found", { status: 404 });
   if (await hydrateMissingTargetTweets(context, [nomination])) {
     nominations = await repos.nominations.listFeed({ viewerUserId: user?.id, includeHidden: isAdmin });
+    nominations = nominations.filter((item) => visibleStatuses.has(item.status));
     nomination = nominations.find((item) => item.id === params.id);
     if (!nomination) throw new Response("Not found", { status: 404 });
   }

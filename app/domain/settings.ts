@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { nominationTypes } from "./nominations";
-import { roleNames } from "./roles";
+import { nominationStatuses, nominationTypes, type NominationStatus } from "./nominations";
+import { roleNames, type RoleName } from "./roles";
 
 export const publishingWorkflowSchema = z.enum([
   "manual_review_when_qualified",
@@ -27,6 +27,16 @@ export const automaticRoleRuleSchema = z.object({
 export type AutomaticRoleWhitelistEntry = z.infer<typeof automaticRoleWhitelistEntrySchema>;
 export type AutomaticRoleRule = z.infer<typeof automaticRoleRuleSchema>;
 
+const defaultVisibleFeedStatuses = nominationStatuses.filter((status) => status !== "draft" && status !== "withdrawn");
+
+const visibleFeedStatusesSchema = z.array(z.enum(nominationStatuses));
+
+export const roleFeedVisibilitySchema = z.object({
+  spectator: visibleFeedStatusesSchema.default(defaultVisibleFeedStatuses),
+  voter: visibleFeedStatusesSchema.default(defaultVisibleFeedStatuses),
+  admin: visibleFeedStatusesSchema.default(nominationStatuses.filter((status) => status !== "draft")),
+});
+
 const optionalManualThreshold = (schema: z.ZodType<number>, defaultValue: number) =>
   z.preprocess((value) => value === "" ? null : value, schema.nullable()).default(defaultValue) as z.ZodType<number | null>;
 
@@ -41,6 +51,11 @@ export const appSettingsSchema = z.object({
   automaticRoleAssignmentEnabled: z.coerce.boolean().default(false),
   automaticRoleWhitelist: z.array(automaticRoleWhitelistEntrySchema).default([]),
   automaticRoleRules: z.array(automaticRoleRuleSchema).default([]),
+  roleFeedVisibility: roleFeedVisibilitySchema.default({
+    spectator: defaultVisibleFeedStatuses,
+    voter: defaultVisibleFeedStatuses,
+    admin: nominationStatuses.filter((status) => status !== "draft"),
+  }),
   maxImageUploadBytes: z.coerce.number().int().min(1).default(5 * 1024 * 1024),
   hostUserId: z.string().default(""),
   hostHandle: z.string().default(""),
@@ -49,3 +64,8 @@ export const appSettingsSchema = z.object({
 export type AppSettings = z.infer<typeof appSettingsSchema>;
 
 export const defaultSettings: AppSettings = appSettingsSchema.parse({});
+
+export function visibleFeedStatusesForRoles(settings: AppSettings, roles: RoleName[] | null | undefined): NominationStatus[] {
+  const effectiveRoles: RoleName[] = roles?.length ? roles : ["spectator"];
+  return Array.from(new Set(effectiveRoles.flatMap((role) => settings.roleFeedVisibility[role])));
+}

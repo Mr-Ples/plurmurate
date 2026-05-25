@@ -4,6 +4,7 @@ import { AppShell } from "~/components/AppShell";
 import { NewNominationForm } from "~/components/NewNominationForm";
 import { NominationCard } from "~/components/NominationCard";
 import { nominationStatuses, nominationTypeLabel, type FeedNomination } from "~/domain/nominations";
+import { visibleFeedStatusesForRoles } from "~/domain/settings";
 import { getSettings } from "~/services/settings-service";
 import { getCurrentUser } from "~/lib/auth/session";
 import { getRepositories } from "~/repositories/drizzle/repositories";
@@ -22,15 +23,18 @@ export async function loader({ request, context }: any) {
   const users = await repos.users.listUsers();
   const host = users.find((candidate) => candidate.xUserId === settings.hostUserId || candidate.username?.toLowerCase() === settings.hostHandle.toLowerCase()) ?? null;
   const isAdmin = user?.roles.includes("admin") ?? false;
+  const visibleStatuses = new Set(visibleFeedStatusesForRoles(settings, user?.roles));
   let nominations = await repos.nominations.listFeed({
     viewerUserId: user?.id,
     includeHidden: isAdmin,
   });
+  nominations = nominations.filter((nomination) => visibleStatuses.has(nomination.status));
   if (await hydrateMissingTargetTweets(context, nominations)) {
     nominations = await repos.nominations.listFeed({
       viewerUserId: user?.id,
       includeHidden: isAdmin,
     });
+    nominations = nominations.filter((nomination) => visibleStatuses.has(nomination.status));
   }
   return {
     user,
@@ -85,10 +89,11 @@ export async function action({ request, context }: any) {
 export default function Home() {
   const { user, settings, nominations, host, publishError } = useLoaderData<typeof loader>();
   const isAdmin = user?.roles.includes("admin") ?? false;
+  const visibleStatuses = new Set(visibleFeedStatusesForRoles(settings, user?.roles));
   const [filters, setFilters] = useState({ status: "", type: "", search: "", sort: "newest" });
   const statusOptions = [
     { value: "", label: "All" },
-    ...nominationStatuses.filter((status) => status !== "draft" && (isAdmin || status !== "withdrawn")).map((status) => ({ value: status, label: status })),
+    ...nominationStatuses.filter((status) => status !== "draft" && visibleStatuses.has(status)).map((status) => ({ value: status, label: status })),
   ];
   const typeOptions = [{ value: "", label: "All" }, ...settings.enabledNominationTypes.map((type) => ({ value: type, label: nominationTypeLabel(type) }))];
   const sortOptions = [
@@ -102,6 +107,7 @@ export default function Home() {
   ];
   const filteredNominations = useMemo(
     () => {
+      if (!isAdmin) return nominations;
       const search = filters.search.trim().toLowerCase();
       const searched = nominations.filter((nomination) => {
         const matchesFilters = (!filters.status || nomination.status === filters.status) && (!filters.type || nomination.type === filters.type);
@@ -123,68 +129,73 @@ export default function Home() {
       });
       return [...searched].sort((left, right) => compareNominations(left, right, filters.sort));
     },
-    [filters.search, filters.sort, filters.status, filters.type, nominations],
+    [filters.search, filters.sort, filters.status, filters.type, isAdmin, nominations],
   );
   const hasActiveFilters = Boolean(filters.status || filters.type || filters.search || filters.sort !== "newest");
+  const showSidebar = isAdmin || Boolean(host);
   return (
     <AppShell user={user}>
-      <main className="mx-auto grid w-full max-w-[1010px] gap-9 py-[34px] pb-[70px] md:grid-cols-[minmax(180px,250px)_minmax(0,680px)]">
-        <section className="self-start md:sticky md:top-5">
-          {host ? (
-            <a className="mb-4 grid grid-cols-[46px_minmax(0,1fr)] items-center gap-3 rounded-lg border border-[#1f242129] bg-[#fffcf49e] p-3 hover:border-[#1f24214d] hover:bg-[#fffcf4d1]" href={`https://x.com/${host.handle}`} target="_blank" rel="noreferrer">
-              {host.profileImageUrl ? <img className="h-[46px] w-[46px] rounded-full bg-[#ddd4c5] object-cover" src={host.profileImageUrl} alt="" /> : <span className="inline-flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[#ddd4c5] font-bold text-[#6e716b]" aria-hidden="true">{host.handle[0]?.toUpperCase()}</span>}
-              <span className="block min-w-0">
-                <span className="mb-0.5 block text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Host Account</span>
-                {host.displayName ? <strong className="block overflow-hidden text-ellipsis whitespace-nowrap text-[0.98rem]">{host.displayName}</strong> : null}
-                <span className="block overflow-hidden text-ellipsis whitespace-nowrap text-[#6e716b]">@{host.handle}</span>
-              </span>
-            </a>
-          ) : null}
-          <div className="grid gap-4 rounded-lg border border-[#1f242129] bg-[#fffcf47a] p-3" aria-label="Feed filters">
-            <label className="grid gap-1.5">
-              <span className="text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Search</span>
-              <input
-                className="min-h-[38px] rounded-md border border-[#1f242129] bg-white/45 px-3 py-2 outline-none focus:border-[#526f8d]"
-                value={filters.search}
-                onChange={(event) => {
-                  const search = event.currentTarget.value;
-                  setFilters((current) => ({ ...current, search }));
-                }}
-                placeholder="Search feed"
-                type="search"
-              />
-            </label>
-            <FilterGroup
-              title="Status"
-              options={statusOptions}
-              activeValue={filters.status}
-              onChange={(status) => setFilters((current) => ({ ...current, status }))}
-              action={hasActiveFilters ? <button className="cursor-pointer border-b border-[#526f8d73] bg-transparent p-0 text-sm normal-case tracking-normal text-[#526f8d]" type="button" onClick={() => setFilters({ status: "", type: "", search: "", sort: "newest" })}>Clear filters</button> : null}
-              reserveAction
-            />
-            <FilterGroup title="Type" options={typeOptions} activeValue={filters.type} onChange={(type) => setFilters((current) => ({ ...current, type }))} />
-            <label className="grid gap-1.5">
-              <span className="text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Sort</span>
-              <select
-                className="min-h-[38px] rounded-md border border-[#1f242129] bg-white/45 px-3 py-2 outline-none focus:border-[#526f8d]"
-                value={filters.sort}
-                onChange={(event) => {
-                  const sort = event.currentTarget.value;
-                  setFilters((current) => ({ ...current, sort }));
-                }}
-              >
-                {sortOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-              </select>
-            </label>
-          </div>
-        </section>
+      <main className={`mx-auto grid w-full gap-9 py-[34px] pb-[70px] ${showSidebar ? "max-w-[1010px] md:grid-cols-[minmax(180px,250px)_minmax(0,680px)]" : "max-w-[680px]"}`}>
+        {showSidebar ? (
+          <section className="self-start md:sticky md:top-5">
+            {host ? (
+              <a className="mb-4 grid grid-cols-[46px_minmax(0,1fr)] items-center gap-3 rounded-lg border border-[#1f242129] bg-[#fffcf49e] p-3 hover:border-[#1f24214d] hover:bg-[#fffcf4d1]" href={`https://x.com/${host.handle}`} target="_blank" rel="noreferrer">
+                {host.profileImageUrl ? <img className="h-[46px] w-[46px] rounded-full bg-[#ddd4c5] object-cover" src={host.profileImageUrl} alt="" /> : <span className="inline-flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[#ddd4c5] font-bold text-[#6e716b]" aria-hidden="true">{host.handle[0]?.toUpperCase()}</span>}
+                <span className="block min-w-0">
+                  <span className="mb-0.5 block text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Host Account</span>
+                  {host.displayName ? <strong className="block overflow-hidden text-ellipsis whitespace-nowrap text-[0.98rem]">{host.displayName}</strong> : null}
+                  <span className="block overflow-hidden text-ellipsis whitespace-nowrap text-[#6e716b]">@{host.handle}</span>
+                </span>
+              </a>
+            ) : null}
+            {isAdmin ? (
+              <div className="grid gap-4 rounded-lg border border-[#1f242129] bg-[#fffcf47a] p-3" aria-label="Feed filters">
+                <label className="grid gap-1.5">
+                  <span className="text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Search</span>
+                  <input
+                    className="min-h-[38px] rounded-md border border-[#1f242129] bg-white/45 px-3 py-2 outline-none focus:border-[#526f8d]"
+                    value={filters.search}
+                    onChange={(event) => {
+                      const search = event.currentTarget.value;
+                      setFilters((current) => ({ ...current, search }));
+                    }}
+                    placeholder="Search feed"
+                    type="search"
+                  />
+                </label>
+                <FilterGroup
+                  title="Status"
+                  options={statusOptions}
+                  activeValue={filters.status}
+                  onChange={(status) => setFilters((current) => ({ ...current, status }))}
+                  action={hasActiveFilters ? <button className="cursor-pointer border-b border-[#526f8d73] bg-transparent p-0 text-sm normal-case tracking-normal text-[#526f8d]" type="button" onClick={() => setFilters({ status: "", type: "", search: "", sort: "newest" })}>Clear filters</button> : null}
+                  reserveAction
+                />
+                <FilterGroup title="Type" options={typeOptions} activeValue={filters.type} onChange={(type) => setFilters((current) => ({ ...current, type }))} />
+                <label className="grid gap-1.5">
+                  <span className="text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Sort</span>
+                  <select
+                    className="min-h-[38px] rounded-md border border-[#1f242129] bg-white/45 px-3 py-2 outline-none focus:border-[#526f8d]"
+                    value={filters.sort}
+                    onChange={(event) => {
+                      const sort = event.currentTarget.value;
+                      setFilters((current) => ({ ...current, sort }));
+                    }}
+                  >
+                    {sortOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                </label>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
         <section className="grid gap-3.5">
           {publishError === "credits" ? <PublishErrorBanner /> : null}
           <NewNominationForm user={user} settings={settings} />
           <div className="flex items-center gap-3 py-1  px-6 opacity-50 " aria-hidden="true">
             <span className="h-px flex-1 bg-[#1f242129] my-4" />
           </div>
-          {filteredNominations.length ? filteredNominations.map((nomination) => <NominationCard key={nomination.id} nomination={nomination} user={user} />) : <p className="text-[#6e716b]">{nominations.length ? "No nominations match those filters." : "No nominations yet."}</p>}
+          {filteredNominations.length ? filteredNominations.map((nomination) => <NominationCard key={nomination.id} nomination={nomination} user={user} />) : <p className="text-[#6e716b]">{isAdmin && nominations.length ? "No nominations match those filters." : "No nominations yet."}</p>}
         </section>
       </main>
     </AppShell>
