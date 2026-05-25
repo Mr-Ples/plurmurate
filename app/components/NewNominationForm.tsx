@@ -36,9 +36,10 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
   const overLimit = count > limit;
   const progress = Math.min(count / limit, 1);
   const remaining = limit - count;
+  const hasMultipleNominationTypes = settings.enabledNominationTypes.length > 1;
   const needsTargetUrl = selectedType === "quote" || selectedType === "repost" || selectedType === "reply";
+  const showNominationControls = hasMultipleNominationTypes || needsTargetUrl;
   const isRepost = selectedType === "repost";
-  const isOriginal = selectedType === "original";
   const targetMissing = needsTargetUrl && !targetTweetUrl.trim();
   const textMissing = !isRepost && !text.trim();
   const postDisabled = overLimit || targetMissing || textMissing;
@@ -159,6 +160,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
       }}
     >
       <input type="hidden" name="_intent" value="create" />
+      {hasMultipleNominationTypes ? null : <input type="hidden" name="type" value={selectedType} />}
       {posting ? (
         <div className="absolute inset-0 z-30 grid place-items-center rounded-lg bg-[#fffcf4cc] backdrop-blur-[2px]" aria-live="polite" aria-label="Posting">
           <span className="h-8 w-8 animate-spin rounded-full border-2 border-[#1f242129] border-t-[#1f2421]" />
@@ -208,26 +210,23 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
           )}
           {selectedImages.length ? (
             <div
-              className={`mt-3 grid overflow-hidden rounded-xl border border-[#1f242129] bg-[#1f24210a] ${
-                selectedImages.length === 1 ? "grid-cols-1" : "grid-cols-2"
-              } ${isRepost ? "opacity-50" : ""}`}
+              className={`mt-3 grid overflow-hidden rounded-xl border border-[#1f242129] bg-[#1f24210a] ${selectedImages.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                } ${isRepost ? "opacity-50" : ""}`}
               aria-label="Selected media"
             >
               {selectedImages.map((image, index) => (
                 <div
-                  className={`relative overflow-hidden bg-[#ddd4c5] ${
-                    selectedImages.length === 3 && index === 0 ? "row-span-2" : ""
-                  } ${index > 0 ? "border-l border-[#1f242129]" : ""} ${index > 1 ? "border-t border-[#1f242129]" : ""}`}
+                  className={`relative overflow-hidden bg-[#ddd4c5] ${selectedImages.length === 3 && index === 0 ? "row-span-2" : ""
+                    } ${index > 0 ? "border-l border-[#1f242129]" : ""} ${index > 1 ? "border-t border-[#1f242129]" : ""}`}
                   key={image.id}
                 >
                   <img
-                    className={`w-full object-cover ${
-                      selectedImages.length === 1
+                    className={`w-full object-cover ${selectedImages.length === 1
                         ? "max-h-[420px] min-h-[132px] md:min-h-[170px]"
                         : selectedImages.length === 3 && index === 0
                           ? "h-[264px] md:h-[340px]"
                           : "h-[132px] md:h-[170px]"
-                    }`}
+                      }`}
                     src={image.url}
                     alt={image.file.name}
                   />
@@ -296,47 +295,52 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
           </div>
         </div>
       </section>
-      <div className="grid gap-2.5 md:grid-cols-[minmax(150px,220px)_minmax(0,1fr)]">
-        <label className="grid gap-1.5">
-          Type
-          <select
-            className={fieldClass}
-            name="type"
-            value={selectedType}
-            onChange={(event) => {
-              const nextType = event.currentTarget.value as NominationType;
-              setSelectedType(nextType);
-              if (nextType === "repost") {
-                setText("");
-                clearSelectedImages();
-              }
-            }}
-          >
-            {settings.enabledNominationTypes.map((type) => (
-              <option key={type} value={type}>{nominationTypeLabel(type)}</option>
-            ))}
-          </select>
-        </label>
-        <label className={`grid gap-1.5 ${isOriginal ? "opacity-45" : ""}`}>
-          <span className="inline-flex items-center gap-1.5">
-            Target X post URL
-            <span className="group relative inline-flex h-[22px] w-[22px] items-center justify-center rounded-full border border-[#1f242129] text-[#6e716b]" tabIndex={0} aria-label="For reposts, replies, and quotes a URL is required">
-              <Info size={15} aria-hidden="true" />
-              <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-30 w-[min(280px,70vw)] -translate-x-1/2 translate-y-1 rounded-md border border-[#1f242129] bg-[#1f2421] px-3 py-2.5 text-sm leading-snug text-[#fffaf0] opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100 group-focus:translate-y-0 group-focus:opacity-100">For reposts, replies, and quotes a URL is required</span>
-            </span>
-          </span>
-          <input
-            className={`${fieldClass} disabled:cursor-not-allowed`}
-            name="targetTweetUrl"
-            type="url"
-            placeholder="https://x.com/user/status/..."
-            required={needsTargetUrl}
-            disabled={isOriginal}
-            value={targetTweetUrl}
-            onChange={(event) => setTargetTweetUrl(event.currentTarget.value)}
-          />
-        </label>
-      </div>
+      {showNominationControls ? (
+        <div className={`grid gap-2.5 ${hasMultipleNominationTypes && needsTargetUrl ? "md:grid-cols-[minmax(150px,220px)_minmax(0,1fr)]" : ""}`}>
+          {hasMultipleNominationTypes ? (
+            <label className="grid gap-1.5">
+              Type
+              <select
+                className={fieldClass}
+                name="type"
+                value={selectedType}
+                onChange={(event) => {
+                  const nextType = event.currentTarget.value as NominationType;
+                  setSelectedType(nextType);
+                  if (nextType === "repost") {
+                    setText("");
+                    clearSelectedImages();
+                  }
+                }}
+              >
+                {settings.enabledNominationTypes.map((type) => (
+                  <option key={type} value={type}>{nominationTypeLabel(type)}</option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+          {needsTargetUrl ? (
+            <label className="grid gap-1.5">
+              <span className="inline-flex items-center gap-1.5">
+                Target X post URL
+                <span className="group relative inline-flex h-[22px] w-[22px] items-center justify-center rounded-full border border-[#1f242129] text-[#6e716b]" tabIndex={0} aria-label="For reposts, replies, and quotes a URL is required">
+                  <Info size={15} aria-hidden="true" />
+                  <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-30 w-[min(280px,70vw)] -translate-x-1/2 translate-y-1 rounded-md border border-[#1f242129] bg-[#1f2421] px-3 py-2.5 text-sm leading-snug text-[#fffaf0] opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100 group-focus:translate-y-0 group-focus:opacity-100">For reposts, replies, and quotes a URL is required</span>
+                </span>
+              </span>
+              <input
+                className={fieldClass}
+                name="targetTweetUrl"
+                type="url"
+                placeholder="https://x.com/user/status/..."
+                required
+                value={targetTweetUrl}
+                onChange={(event) => setTargetTweetUrl(event.currentTarget.value)}
+              />
+            </label>
+          ) : null}
+        </div>
+      ) : null}
       <label className="grid gap-1.5">
         <span className="inline-flex items-center gap-1.5">
           Motivation (optional)
