@@ -26,13 +26,15 @@ Plurmurate is a community nomination and voting tool for deciding what a shared 
 
 ## X/Twitter Setup
 
-Create two separate X developer apps with the **Create App** button.
+Note: Automated sending uses paid X API write requests. Budget at least `$0.015` per post; any post containing a URL is taxed at `$0.20` per post for automated sending. If the X developer account runs out of credits, use the host controls to mark a nomination as sent manually after posting it yourself.
 
-Automated sending uses paid X API write requests. Budget at least `$0.015` per post; any post containing a URL is taxed at `$0.20` per post for automated sending. If the X developer account runs out of credits, use the host controls to mark a nomination as sent manually after posting it yourself.
+Create two separate X developer apps with the **Create App** button.
 
 Name them `plurmurate-staging` and `plurmurate-production` for example.
 - `plurmurate-staging`: used for local development and staging.
 - `plurmurate-production`: used for the live production deployment.
+
+Click the set up button in `User authentication settings`
 
 For both apps, configure user authentication:
 
@@ -41,7 +43,9 @@ For both apps, configure user authentication:
 - OAuth scopes: include the scopes needed for login, reading users/posts, offline token refresh, and posting (`tweet.read`, `tweet.write`, `users.read`, `offline.access`). No Direct Message scope is needed.
 - Type of App: **Web App, Automated App or Bot**.
   - Do not choose **Native App**.
-- Use any temporary placeholder URL for now until the app has been deployed or tunneled.
+- Use any temporary placeholder URL for now until the app has been deployed or tunneled e.g:
+  - Callback URI / Redirect URL: https://lol.com/callback
+  - Website URL: https://lol.com/
 
 Create production and staging secrets:
 
@@ -56,7 +60,7 @@ Edit `.dev.vars.staging`:
 SESSION_SECRET=replace-with-at-least-32-random-characters
 X_CLIENT_ID=your-staging-x-oauth-client-id
 X_CLIENT_SECRET=your-staging-x-oauth-client-secret
-DISCORD_BOT_TOKEN=your-discord-bot-token
+DISCORD_BOT_TOKEN=your-discord-bot-token  # see setup below
 ```
 
 Edit `.dev.vars.production`:
@@ -65,7 +69,7 @@ Edit `.dev.vars.production`:
 SESSION_SECRET=replace-with-at-least-32-random-characters
 X_CLIENT_ID=your-production-x-oauth-client-id
 X_CLIENT_SECRET=your-production-x-oauth-client-secret
-DISCORD_BOT_TOKEN=your-discord-bot-token
+DISCORD_BOT_TOKEN=your-discord-bot-token # see setup below
 ```
 
 ## Discord Setup (Optional)
@@ -128,6 +132,7 @@ Edit `wrangler.jsonc`:
 Apply migrations to the local D1 database, then start the dev server:
 
 ```bash
+npm install
 npm run db:migrate:local
 npm run db:migrate:staging:remote
 npm run dev
