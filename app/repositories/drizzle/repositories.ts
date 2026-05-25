@@ -21,7 +21,11 @@ import {
   votes,
 } from "./schema";
 
-function toCurrentUser(row: any, roleRows: Array<{ name: string }>) {
+function roleNameFromId(roleId: string) {
+  return roleId.replace(/^role_/, "");
+}
+
+function toCurrentUser(row: any, roleRows: Array<{ roleId: string; name?: string }>) {
   return {
     id: row.id,
     xUserId: row.xUserId,
@@ -29,7 +33,9 @@ function toCurrentUser(row: any, roleRows: Array<{ name: string }>) {
     displayName: row.displayName,
     profileImageUrl: row.profileImageUrl,
     followersCount: row.followersCount,
-    roles: roleRows.map((role) => role.name).filter((role): role is RoleName => roleNames.includes(role as RoleName)),
+    roles: roleRows
+      .map((role) => roleNameFromId(role.roleId))
+      .filter((role): role is RoleName => roleNames.includes(role as RoleName)),
   };
 }
 
@@ -82,10 +88,10 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
 
   async function getUserRoles(userId: string) {
     return db
-      .select({ name: roles.name })
+      .select({ roleId: userRoles.roleId })
       .from(userRoles)
-      .innerJoin(roles, eq(userRoles.roleId, roles.id))
-      .where(eq(userRoles.userId, userId));
+      .where(eq(userRoles.userId, userId))
+      .orderBy(sql`case ${userRoles.roleId} when 'role_spectator' then 0 when 'role_voter' then 1 when 'role_admin' then 2 else 3 end`);
   }
 
   async function getVoteSummary(nominationId: string): Promise<VoteSummary> {
@@ -183,6 +189,12 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
         const names: RoleName[] = ["spectator", "voter", "admin"];
         for (const name of names) {
           await db.insert(roles).values({ id: `role_${name}`, name }).onConflictDoNothing().run();
+        }
+        for (const name of names) {
+          await db.update(roles).set({ name: `__seed_${name}` }).where(eq(roles.id, `role_${name}`)).run();
+        }
+        for (const name of names) {
+          await db.update(roles).set({ name }).where(eq(roles.id, `role_${name}`)).run();
         }
       },
       async assignRole(input) {
