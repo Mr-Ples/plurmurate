@@ -110,8 +110,7 @@ function buildDiscordMessage(env: DiscordEnv, notification: DiscordNotification,
   const nominationUrl = nominationDetailLink(notification.appOrigin, nomination.id);
   if (nominationUrl) fields.push({ name: "Nomination", value: link("Open detail view", nominationUrl), inline: true });
   if (nominator) {
-    const name = nominator.displayName || nominator.username || nominator.xUserId;
-    fields.push({ name: "Nominator", value: xAccountLink(nominator.username) ?? name, inline: true });
+    fields.push({ name: "Nominator", value: userDiscordLabel(nominator), inline: true });
   }
   if (hostAccount) fields.push({ name: "Host account", value: hostAccount, inline: true });
 
@@ -124,8 +123,7 @@ function buildDiscordMessage(env: DiscordEnv, notification: DiscordNotification,
   } else if (notification.kind === "nomination_sent") {
     fields.push({ name: "Method", value: notification.manual ? "Manual" : "Automatic", inline: true });
     if (notification.actor) {
-      const name = notification.actor.displayName || notification.actor.username || notification.actor.xUserId;
-      fields.push({ name: "Sent by", value: xAccountLink(notification.actor.username) ?? name, inline: true });
+      fields.push({ name: "Sent by", value: userDiscordLabel(notification.actor), inline: true });
     }
     if (notification.publishedUrl) fields.push({ name: "Published post", value: link("Open on X", notification.publishedUrl), inline: false });
   }
@@ -157,6 +155,10 @@ function xAccountLink(handle: string | null | undefined) {
   const cleanHandle = handle?.replace(/^@/, "").trim();
   if (!cleanHandle) return null;
   return link(`@${cleanHandle}`, `https://x.com/${cleanHandle}`);
+}
+
+function userDiscordLabel(user: CurrentUser) {
+  return xAccountLink(user.username) ?? user.displayName?.trim() ?? (user.xUserId || "Unknown user");
 }
 
 function nominationDetailLink(appOrigin: string | null | undefined, nominationId: string) {

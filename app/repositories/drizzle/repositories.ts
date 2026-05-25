@@ -478,7 +478,7 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
     discordNotifications: {
       async reserve(input) {
         const id = newId("dnt");
-        const result = await db
+        const rows = await db
           .insert(discordNotifications)
           .values({
             id,
@@ -488,8 +488,8 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
             createdAt: new Date().toISOString(),
           })
           .onConflictDoNothing()
-          .run();
-        return Number((result as { meta?: { changes?: number } }).meta?.changes ?? 0) > 0 ? id : null;
+          .returning({ id: discordNotifications.id });
+        return rows[0]?.id ?? null;
       },
       async markSent(id) {
         await db
