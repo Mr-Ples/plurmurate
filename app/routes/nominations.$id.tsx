@@ -5,6 +5,7 @@ import { AbuRatingDialog } from "~/components/AbuRatingDialog";
 import { AppShell } from "~/components/AppShell";
 import { TargetTweetCard } from "~/components/TargetTweetCard";
 import { nominationTypeLabel } from "~/domain/nominations";
+import { buildTweetIntentUrl } from "~/lib/utils/tweets";
 import { visibleFeedStatusesForRoles } from "~/domain/settings";
 import { getVoteDisplayOptions, voteDisplayLabel } from "~/domain/votes";
 import { getCurrentUser } from "~/lib/auth/session";
@@ -80,6 +81,8 @@ export default function NominationDetail() {
   const canMarkSentManually = !["sent", "withdrawn"].includes(nomination.status);
   const canDeny = ["pending", "qualified", "approved", "failed", "denied"].includes(nomination.status);
   const canArchive = !["withdrawn", "sent"].includes(nomination.status);
+  const composeUrl = nomination.text?.trim() ? buildTweetIntentUrl(nomination.text.trim()) : null;
+  const canCompose = canSend && Boolean(composeUrl) && nomination.type !== "repost";
   const voteDisabledReason = getVoteDisabledReason(user, nomination.status);
   const voteOptions = getVoteDisplayOptions(settings.voteDisplayMode, nomination);
   const from = (location.state as { from?: string } | null)?.from;
@@ -203,6 +206,11 @@ export default function NominationDetail() {
                 <input type="hidden" name="nominationId" value={nomination.id} />
                 <textarea className={decisionFieldClass} name="decisionRationale" maxLength={500} defaultValue={nomination.decisionRationale ?? ""} placeholder="Host decision rationale" />
                 <div className="flex flex-wrap gap-2.5">
+                  {canCompose && composeUrl ? (
+                    <a className={secondaryActionClass} href={composeUrl} target="_blank" rel="noreferrer">
+                      Compose on X
+                    </a>
+                  ) : null}
                   {canSend ? <button className={primaryActionClass} name="_intent" value="send">Send</button> : null}
                   {canMarkSentManually ? (
                     <>

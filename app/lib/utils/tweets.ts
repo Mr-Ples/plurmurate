@@ -13,3 +13,9 @@ export function parseTweetUrl(value: string | null | undefined) {
     return null;
   }
 }
+
+export function buildTweetIntentUrl(text: string) {
+  const intentUrl = new URL("https://twitter.com/intent/tweet");
+  intentUrl.searchParams.set("text", text);
+  return intentUrl.toString();
+}
