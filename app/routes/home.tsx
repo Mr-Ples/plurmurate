@@ -148,7 +148,6 @@ export default function Home() {
                 </span>
               </a>
             ) : null}
-            {isAdmin ? (
               <div className="grid gap-4 rounded-lg border border-[#1f242129] bg-[#fffcf47a] p-3" aria-label="Feed filters">
                 <label className="grid gap-1.5">
                   <span className="text-[0.68rem] uppercase tracking-[0.08em] text-[#6e716b]">Search</span>
@@ -186,7 +185,6 @@ export default function Home() {
                   </select>
                 </label>
               </div>
-            ) : null}
           </section>
         ) : null}
         <section className="grid gap-3.5">

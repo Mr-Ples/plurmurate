@@ -245,7 +245,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
           ) : null}
           {selectedType === "quote" ? targetPreviewCard : null}
           <div className="flex items-center gap-2.5 border-t border-[#1f242129] pt-3">
-            {isRepost ? (
+            {/* {isRepost ? (
               <span className={`${iconButtonClass} cursor-not-allowed border-[#1f242114] bg-[#1f24210a] text-[#6e716b] opacity-30 grayscale`} title="Reposts cannot include media" aria-disabled="true">
                 <Image size={19} aria-hidden="true" />
                 <span className={srOnlyClass}>Reposts cannot include media</span>
@@ -276,7 +276,7 @@ export function NewNominationForm({ user, settings }: { user: CurrentUser | null
                 <Image size={19} aria-hidden="true" />
                 <span className={srOnlyClass}>Login to add media</span>
               </Link>
-            )}
+            )} */}
             <div className={`relative ml-auto inline-flex h-[38px] w-[38px] items-center justify-center text-xs ${overLimit ? "text-[#9f1d1d]" : "text-[#6e716b]"}`} aria-label={`${Math.abs(remaining)} characters ${overLimit ? "over" : "remaining"}`}>
               <svg className="absolute inset-0 h-[38px] w-[38px] -rotate-90" viewBox="0 0 36 36" aria-hidden="true">
                 <circle className="fill-none stroke-[#1f242124] stroke-[2.5]" cx="18" cy="18" r="15" />
