@@ -65,7 +65,7 @@ export function NominationCard({
   ) : null;
   const publishedLink = nomination.publishedTweetUrl ? (
     <p className="relative mt-3 mb-0 text-sm">
-      <a className="border-b border-[#526f8d73] text-[#526f8d]" href={nomination.publishedTweetUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
+      <a className="border-b border-[#526f8d73] flex flex-row items-center gap-0.5 text-[#526f8d]" href={nomination.publishedTweetUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
         Published post
         <ExternalLink size={15} aria-hidden="true" />
       </a>

@@ -120,7 +120,7 @@ export default function NominationDetail() {
   ) : null;
   const publishedLink = nomination.publishedTweetUrl ? (
     <p className="relative my-4 text-sm">
-      <a className="border-b border-[#526f8d73] text-[#526f8d]" href={nomination.publishedTweetUrl} target="_blank" rel="noreferrer">
+      <a className="border-b border-[#526f8d73] flex flex-row items-center gap-0.5 text-[#526f8d]" href={nomination.publishedTweetUrl} target="_blank" rel="noreferrer">
         Published post
         <ExternalLink size={15} aria-hidden="true" />
       </a>
