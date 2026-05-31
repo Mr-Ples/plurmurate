@@ -1,4 +1,4 @@
-import { ArrowLeft, Info, Repeat2, ThumbsDown, ThumbsUp } from "lucide-react";
+import { ArrowLeft, ExternalLink, Info, Repeat2, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useState } from "react";
 import { Form, Link, redirect, useLoaderData, useLocation, useNavigate } from "react-router";
 import { AbuRatingDialog } from "~/components/AbuRatingDialog";
@@ -122,6 +122,7 @@ export default function NominationDetail() {
     <p className="relative my-4 text-sm">
       <a className="border-b border-[#526f8d73] text-[#526f8d]" href={nomination.publishedTweetUrl} target="_blank" rel="noreferrer">
         Published post
+        <ExternalLink size={15} aria-hidden="true" />
       </a>
     </p>
   ) : null;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Info, Repeat2, ThumbsDown, ThumbsUp } from "lucide-react";
+import { ExternalLink, Info, Repeat2, ThumbsDown, ThumbsUp } from "lucide-react";
 import { Form, useLocation, useNavigate } from "react-router";
 import { AbuRatingDialog } from "~/components/AbuRatingDialog";
 import { TargetTweetCard } from "~/components/TargetTweetCard";
@@ -67,6 +67,7 @@ export function NominationCard({
     <p className="relative mt-3 mb-0 text-sm">
       <a className="border-b border-[#526f8d73] text-[#526f8d]" href={nomination.publishedTweetUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
         Published post
+        <ExternalLink size={15} aria-hidden="true" />
       </a>
     </p>
   ) : null;
