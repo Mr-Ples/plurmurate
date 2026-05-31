@@ -4,6 +4,14 @@ html {
   scrollbar-gutter: stable;
 }
 
+html[data-hydrating="true"] .hydration-spinner {
+  display: grid;
+}
+
+.hydration-spinner {
+  display: none;
+}
+
 .target-tweet-embed>blockquote.twitter-tweet {
   margin: 0;
   margin-top: 16px;

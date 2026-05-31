@@ -379,11 +379,11 @@ function MurmurationCanvas() {
       }
 
       frame += frameStep;
-      animationFrame = requestAnimationFrame(render);
-    }
+        animationFrame = requestAnimationFrame(render);
+      }
 
     resize();
-    render();
+      render();
     window.addEventListener("resize", resize);
     return () => {
       window.removeEventListener("resize", resize);

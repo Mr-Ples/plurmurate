@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react";
 import { ArrowLeft, Home } from "lucide-react";
-import { isRouteErrorResponse, Link, Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError } from "react-router";
+import { isRouteErrorResponse, Link, Links, Meta, Outlet, Scripts, ScrollRestoration, useNavigation, useRouteError } from "react-router";
 import type { LinksFunction } from "react-router";
 import styles from "./styles/app.css?url";
 
@@ -24,11 +25,15 @@ export default function Root() {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script dangerouslySetInnerHTML={{ __html: 'document.documentElement.dataset.hydrating = "true";' }} />
         <Meta />
         <Links />
       </head>
       <body className="min-h-screen bg-[#f7f3ea] bg-[linear-gradient(115deg,rgba(140,91,74,0.10),transparent_28%),linear-gradient(25deg,rgba(73,109,88,0.12),transparent_34%)] font-sans tracking-normal text-[#1f2421]">
-        <Outlet />
+        <HydrationGate>
+          <Outlet />
+        </HydrationGate>
+        <NavigationGate />
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -97,4 +102,37 @@ function getErrorDetails(error: unknown) {
 function readableErrorData(data: unknown) {
   if (typeof data === "string" && data.trim()) return data;
   return "The request could not be completed.";
+}
+
+function HydrationGate({ children }: { children: React.ReactNode }) {
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.removeAttribute("data-hydrating");
+    setHydrated(true);
+  }, []);
+
+  return (
+    <>
+      {children}
+      {!hydrated ? (
+        <div className="hydration-spinner fixed inset-0 z-[999] place-items-center bg-[#f7f3ea]/85 px-6 backdrop-blur-[2px]" aria-hidden="true">
+          <span className="h-7 w-7 animate-spin rounded-full border-2 border-[#1f242129] border-t-[#526f8d]" />
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function NavigationGate() {
+  const navigation = useNavigation();
+  const showSpinner = navigation.state !== "idle" && Boolean(navigation.location);
+
+  if (!showSpinner) return null;
+
+  return (
+    <div className="fixed inset-0 z-[998] grid place-items-center bg-[#f7f3ea]/55 px-6 backdrop-blur-[1px]" aria-hidden="true">
+      <span className="h-7 w-7 animate-spin rounded-full border-2 border-[#1f242129] border-t-[#526f8d]" />
+    </div>
+  );
 }
