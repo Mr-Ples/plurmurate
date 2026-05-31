@@ -82,7 +82,6 @@ export default function NominationDetail() {
   const canDeny = ["pending", "qualified", "approved", "failed", "denied"].includes(nomination.status);
   const canArchive = !["withdrawn", "sent"].includes(nomination.status);
   const composeUrl = nomination.text?.trim() ? buildTweetIntentUrl(nomination.text.trim()) : null;
-  const canCompose = canSend && Boolean(composeUrl) && nomination.type !== "repost";
   const voteDisabledReason = getVoteDisabledReason(user, nomination.status);
   const voteOptions = getVoteDisplayOptions(settings.voteDisplayMode, nomination);
   const from = (location.state as { from?: string } | null)?.from;
@@ -206,22 +205,22 @@ export default function NominationDetail() {
                 <input type="hidden" name="nominationId" value={nomination.id} />
                 <textarea className={decisionFieldClass} name="decisionRationale" maxLength={500} defaultValue={nomination.decisionRationale ?? ""} placeholder="Host decision rationale" />
                 <div className="flex flex-wrap gap-2.5">
-                  {canCompose && composeUrl ? (
-                    <a className={secondaryActionClass} href={composeUrl} target="_blank" rel="noreferrer">
-                      Compose on X
-                    </a>
-                  ) : null}
                   {canSend ? <button className={primaryActionClass} name="_intent" value="send">Send</button> : null}
                   {canMarkSentManually ? (
                     <>
-                      <button className={secondaryActionClass} type="button" onClick={() => setManualSendOpen(true)}>Sent manually</button>
+                      <button className={secondaryActionClass} type="button" onClick={() => setManualSendOpen(true)}>Send manually</button>
                       {manualSendOpen ? (
                         <div className="fixed inset-0 z-50 grid place-items-center bg-[#1f242166] p-4" role="presentation" onClick={() => setManualSendOpen(false)}>
                           <div className="grid w-full max-w-[400px] gap-3 rounded-md border border-[#1f242129] bg-[#fffcf4] p-4 shadow-[0_18px_48px_rgba(31,36,33,0.22)]" role="dialog" aria-modal="true" aria-labelledby={`${nomination.id}-manual-send-title`} onClick={(event) => event.stopPropagation()}>
                             <div className="grid gap-1">
-                              <h2 id={`${nomination.id}-manual-send-title`} className="m-0 text-base font-medium">Sent manually</h2>
+                              <h2 id={`${nomination.id}-manual-send-title`} className="m-0 text-base font-medium">Send manually</h2>
                               <p className="m-0 text-sm text-[#6e716b]">Add the published post URL if you have it.</p>
                             </div>
+                            {composeUrl ? (
+                              <a className={primaryActionClass} href={composeUrl} target="_blank" rel="noreferrer">
+                                Compose on X
+                              </a>
+                            ) : null}
                             <input className={manualUrlClass} name="publishedTweetUrl" type="url" placeholder="Published post URL (optional)" />
                             <div className="flex flex-wrap justify-end gap-2">
                               <button className={secondaryActionClass} type="button" onClick={() => setManualSendOpen(false)}>Cancel</button>
