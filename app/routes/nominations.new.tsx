@@ -1,7 +1,7 @@
 import { redirect } from "react-router";
 import { getCurrentUser } from "~/lib/auth/session";
 import { createNomination } from "~/services/nomination-service";
-import { storeNominationImage } from "~/services/media-service";
+import { assertCanUploadNominationImages, storeNominationImage } from "~/services/media-service";
 import { evaluateNomination } from "~/services/approval-service";
 import { voteOnNomination } from "~/services/vote-service";
 
@@ -18,8 +18,9 @@ export async function action({ request, context }: any) {
     await voteOnNomination(context, user, formData, appOrigin);
     return redirect("/");
   }
-  const nomination = await createNomination(context, user, formData, appOrigin);
   const images = formData.getAll("image").filter((image: unknown): image is File => image instanceof File && image.size > 0).slice(0, 4);
+  await assertCanUploadNominationImages(context, user, images.length);
+  const nomination = await createNomination(context, user, formData, appOrigin);
   for (const image of images) {
     await storeNominationImage(context, user, nomination.id, image, "nomination_image", appOrigin);
   }

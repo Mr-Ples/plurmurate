@@ -1,4 +1,4 @@
-import { ArrowLeft, Info, Repeat2 } from "lucide-react";
+import { ArrowLeft, Info, Repeat2, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useState } from "react";
 import { Form, Link, redirect, useLoaderData, useLocation, useNavigate } from "react-router";
 import { AbuRatingDialog } from "~/components/AbuRatingDialog";
@@ -6,6 +6,7 @@ import { AppShell } from "~/components/AppShell";
 import { TargetTweetCard } from "~/components/TargetTweetCard";
 import { nominationTypeLabel } from "~/domain/nominations";
 import { visibleFeedStatusesForRoles } from "~/domain/settings";
+import { getVoteDisplayOptions, voteDisplayLabel } from "~/domain/votes";
 import { getCurrentUser } from "~/lib/auth/session";
 import { getRepositories } from "~/repositories/drizzle/repositories";
 import { hydrateMissingTargetTweets } from "~/services/external-tweet-service";
@@ -41,7 +42,7 @@ export async function loader({ request, context, params }: any) {
     nomination = nominations.find((item) => item.id === params.id);
     if (!nomination) throw new Response("Not found", { status: 404 });
   }
-  return { user, nomination, comments: await repos.votes.listComments(params.id), publishError: url.searchParams.get("publishError") };
+  return { user, settings, nomination, comments: await repos.votes.listComments(params.id), publishError: url.searchParams.get("publishError") };
 }
 
 export async function action({ request, context, params }: any) {
@@ -68,7 +69,7 @@ export async function action({ request, context, params }: any) {
 }
 
 export default function NominationDetail() {
-  const { user, nomination, comments, publishError } = useLoaderData<typeof loader>();
+  const { user, settings, nomination, comments, publishError } = useLoaderData<typeof loader>();
   const location = useLocation();
   const navigate = useNavigate();
   const [manualSendOpen, setManualSendOpen] = useState(false);
@@ -80,6 +81,7 @@ export default function NominationDetail() {
   const canDeny = ["pending", "qualified", "approved", "failed", "denied"].includes(nomination.status);
   const canArchive = !["withdrawn", "sent"].includes(nomination.status);
   const voteDisabledReason = getVoteDisabledReason(user, nomination.status);
+  const voteOptions = getVoteDisplayOptions(settings.voteDisplayMode, nomination);
   const from = (location.state as { from?: string } | null)?.from;
   const backTo = from?.startsWith("/") ? from : "/";
   const backClass = "inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-md border border-[#1f242129] bg-white/35 px-3 py-2 text-[#1f2421] hover:border-[#1f24214d] hover:bg-[#fffcf4d1]";
@@ -166,30 +168,33 @@ export default function NominationDetail() {
               <input type="hidden" name="_intent" value="vote" />
               <input type="hidden" name="nominationId" value={nomination.id} />
               <div className="flex gap-2">
-                {(["A", "B", "U"] as const).map((value) => (
-                  <span className="group relative inline-flex" key={value}>
+                {voteOptions.map((option) => (
+                  <span className="group relative inline-flex" key={option.value}>
                     <button
-                      className={`${voteClass} ${nomination.userVote === value ? activeVoteClass : ""}`}
+                      className={`${voteClass} ${option.active ? activeVoteClass : ""}`}
                       name="value"
-                      value={value}
+                      value={option.value}
                       disabled={!canVote}
                       type="submit"
-                      title={canVote && nomination.userVote === value ? "Undo your vote" : undefined}
-                      aria-describedby={!canVote && voteDisabledReason ? `${nomination.id}-${value}-detail-vote-disabled` : undefined}
-                      aria-pressed={nomination.userVote === value}
+                      title={getVoteButtonTitle(settings.voteDisplayMode, option.label, option.active, canVote)}
+                      aria-label={settings.voteDisplayMode === "up_down" ? getVoteButtonLabel(option.label, option.count, option.active, canVote) : undefined}
+                      aria-describedby={!canVote && voteDisabledReason ? `${nomination.id}-${option.value}-detail-vote-disabled` : undefined}
+                      aria-pressed={option.active}
                     >
-                      <span>{value}</span>
-                      <strong>{value === "A" ? nomination.voteA : value === "B" ? nomination.voteB : nomination.voteU}</strong>
+                      {settings.voteDisplayMode === "up_down" ? <VoteIcon label={option.label} size={17} /> : <span>{option.label}</span>}
+                      <strong>{option.count}</strong>
                     </button>
-                    {!canVote && voteDisabledReason ? <VoteDisabledTip id={`${nomination.id}-${value}-detail-vote-disabled`} text={voteDisabledReason} /> : null}
+                    {!canVote && voteDisabledReason ? <VoteDisabledTip id={`${nomination.id}-${option.value}-detail-vote-disabled`} text={voteDisabledReason} /> : null}
                   </span>
                 ))}
-                <button className={voteInfoClass} type="button" onClick={() => setRatingInfoOpen(true)} aria-label="Show A/B/U rating explanation">
-                  <Info size={17} aria-hidden="true" />
-                </button>
+                {settings.voteDisplayMode === "abu" ? (
+                  <button className={voteInfoClass} type="button" onClick={() => setRatingInfoOpen(true)} aria-label="Show A/B/U rating explanation">
+                    <Info size={17} aria-hidden="true" />
+                  </button>
+                ) : null}
               </div>
               <input className={voteCommentClass} name="comment" maxLength={400} placeholder="Optional vote comment" disabled={!canVote} />
-              {ratingInfoOpen ? <AbuRatingDialog onClose={() => setRatingInfoOpen(false)} /> : null}
+              {ratingInfoOpen && settings.voteDisplayMode === "abu" ? <AbuRatingDialog onClose={() => setRatingInfoOpen(false)} /> : null}
             </Form>
             {decisionRationale}
             {publishedLink}
@@ -240,7 +245,7 @@ export default function NominationDetail() {
                     </span>
                   )}
                   <div className="min-w-0">
-                    <p className="m-0 text-sm text-[#6e716b]"><strong className="text-[#1f2421]">{comment.value}</strong> @{comment.username ?? "unknown"}</p>
+                    <p className="m-0 text-sm text-[#6e716b]"><strong className="text-[#1f2421]">{voteDisplayLabel(settings.voteDisplayMode, comment.value)}</strong> @{comment.username ?? "unknown"}</p>
                     <p className="mt-1 mb-0 break-words text-[#1f2421]">{comment.comment}</p>
                   </div>
                 </div>
@@ -259,6 +264,23 @@ function getVoteDisabledReason(user: { roles: string[] } | null, status: string)
   if (status === "sent") return "Voting is closed because this nomination has been sent.";
   if (status === "withdrawn") return "Voting is closed because this nomination has been archived.";
   return null;
+}
+
+function getVoteButtonTitle(mode: string, label: string, active: boolean, canVote: boolean | undefined) {
+  if (canVote && active) return "Undo your vote";
+  if (mode !== "up_down") return undefined;
+  return label === "Down" ? "Downvote" : "Upvote";
+}
+
+function getVoteButtonLabel(label: string, count: number, active: boolean, canVote: boolean | undefined) {
+  const voteLabel = label === "Down" ? "Downvote" : "Upvote";
+  if (canVote && active) return `Undo your ${voteLabel.toLowerCase()} (${count})`;
+  return `${voteLabel} (${count})`;
+}
+
+function VoteIcon({ label, size }: { label: string; size: number }) {
+  const Icon = label === "Down" ? ThumbsDown : ThumbsUp;
+  return <Icon size={size} strokeWidth={2.1} aria-hidden="true" />;
 }
 
 function VoteDisabledTip({ id, text }: { id: string; text: string }) {
