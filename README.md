@@ -1,7 +1,5 @@
 <h1 align="center">Plurmurate</h1>
 
-Demo: https://plurmurate.sidenotes.workers.dev/
-
 <p align="center">
   <strong>This repo is mostly vibe coded so use ate your own risk lmao *</strong>
   <br />
@@ -10,6 +8,8 @@ Demo: https://plurmurate.sidenotes.workers.dev/
 <p align="center">
   <img src="./assets/logo.png" alt="Understand Anything — Turn any codebase into an interactive knowledge graph" width="500" />
 </p>
+
+Demo: https://plurmurate.sidenotes.workers.dev/
 
 <p align="center">
 Plurmurate is a community nomination and voting tool for deciding what a shared X/Twitter account should post, quote, repost, or reply to. Users authenticate with X, submit proposed posts as nominations, and vote on nominations (optionally) using the A/B/U rating system developed by <a href="https://x.com/DefenderOfBasic">Defender</a>:
