@@ -4,7 +4,7 @@ import { Form, redirect, useLoaderData } from "react-router";
 import { AppShell } from "~/components/AppShell";
 import { nominationStatuses, nominationTypes, type NominationStatus } from "~/domain/nominations";
 import { roleNames, type RoleName } from "~/domain/roles";
-import { visibleFeedStatusesForRoles, type AppSettings } from "~/domain/settings";
+import { visibleFeedStatusesForRoles, voteDisplayModeSchema, type AppSettings } from "~/domain/settings";
 import { getCurrentUser } from "~/lib/auth/session";
 import { requirePermission } from "~/lib/permissions/permissions";
 import { newId } from "~/lib/utils/id";
@@ -67,16 +67,24 @@ export async function action({ request, context }: any) {
   const current = await getSettings(context);
   const enabledNominationTypes = nominationTypes.filter((type) => formData.get(`enabledNominationTypes.${type}`) === "on");
   const maxImageUploadBytes = Math.max(1, Number(formData.get("maxImageUploadMegabytes"))) * 1024 * 1024;
+  const imageUploadRateLimitMaxImages = Math.max(1, Number(formData.get("imageUploadRateLimitMaxImages")));
+  const imageUploadRateLimitWindowMinutes = Math.max(1, Number(formData.get("imageUploadRateLimitWindowMinutes")));
+  const imageUploadDailyLimitMaxImages = Math.max(1, Number(formData.get("imageUploadDailyLimitMaxImages")));
 
   await updateSettings(context, user, {
     ...current,
     minimumTotalVotes: optionalNumber(formData.get("minimumTotalVotes")),
     minimumPositiveRatio: optionalNumber(formData.get("minimumPositiveRatio")),
     minimumPositiveMargin: optionalNumber(formData.get("minimumPositiveMargin")),
+    voteDisplayMode: voteDisplayModeSchema.parse(formData.get("voteDisplayMode")),
     publishingWorkflow: "manual_review_when_qualified",
     includeTweetAvatarInPublishedMedia: formData.get("includeTweetAvatarInPublishedMedia") === "on",
     enabledNominationTypes,
     roleFeedVisibility: readRoleFeedVisibility(formData),
+    imageUploadsEnabled: formData.get("imageUploadsEnabled") === "on",
+    imageUploadRateLimitMaxImages,
+    imageUploadRateLimitWindowMinutes,
+    imageUploadDailyLimitMaxImages,
     maxImageUploadBytes,
     hostUserId: current.hostUserId,
     hostHandle: current.hostHandle,
@@ -209,8 +217,8 @@ export default function Settings() {
                 </div>
                 <div className="grid gap-2 sm:grid-cols-[1fr_1fr]">
                   <label className={labelClass}>
-                    <LabelText text="Value" info="For example, 200 means users with more than 200 followers match." />
-                    <input className={fieldClass} name="value" type="number" min={0} defaultValue={200} />
+                    <LabelText text="Value" info="For example, 5 means users with more than 5 followers match." />
+                    <input className={fieldClass} name="value" type="number" min={0} defaultValue={5} />
                   </label>
                   <label className={labelClass}>
                     <LabelText text="Role to add" info="The selected role is added when the rule matches." />
@@ -271,6 +279,13 @@ export default function Settings() {
                 <LabelText text="Approval lead" info="How many more positive votes than negative votes are required." />
                 <input className={fieldClass} name="minimumPositiveMargin" type="number" value={minimumPositiveMargin} onChange={(event) => setMinimumPositiveMargin(event.currentTarget.value)} />
               </label>
+              <label className={labelClass}>
+                <LabelText text="Vote buttons" info="Choose whether voters see A/B/U buttons or a simpler upvote/downvote interface." />
+                <select className={fieldClass} name="voteDisplayMode" defaultValue={settings.voteDisplayMode}>
+                  <option value="abu">A/B/U rating</option>
+                  <option value="up_down">Upvote/downvote</option>
+                </select>
+              </label>
             </div>
           </section>
 
@@ -303,8 +318,23 @@ export default function Settings() {
                 <LabelText text="Image upload limit" info="Maximum file size per uploaded image, in megabytes." />
                 <input className={fieldClass} name="maxImageUploadMegabytes" type="number" min={1} step={1} defaultValue={maxImageUploadMb} />
               </label>
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className={labelClass}>
+                  <LabelText text="Upload rate limit" info="Maximum number of images each user can upload during the rate-limit window." />
+                  <input className={fieldClass} name="imageUploadRateLimitMaxImages" type="number" min={1} step={1} defaultValue={settings.imageUploadRateLimitMaxImages} />
+                </label>
+                <label className={labelClass}>
+                  <LabelText text="Rate-limit window" info="Rolling window length for image upload rate limiting, in minutes." />
+                  <input className={fieldClass} name="imageUploadRateLimitWindowMinutes" type="number" min={1} step={1} defaultValue={settings.imageUploadRateLimitWindowMinutes} />
+                </label>
+              </div>
+              <label className={labelClass}>
+                <LabelText text="Daily upload limit" info="Hard maximum number of images each user can upload during a rolling 24-hour period." />
+                <input className={fieldClass} name="imageUploadDailyLimitMaxImages" type="number" min={1} step={1} defaultValue={settings.imageUploadDailyLimitMaxImages} />
+              </label>
             </div>
             <div className="grid gap-2">
+              <Toggle name="imageUploadsEnabled" defaultChecked={settings.imageUploadsEnabled} title="Allow image uploads" info="When disabled, users cannot attach images to nominations and upload requests are rejected before writing to storage." />
               <Toggle name="includeTweetAvatarInPublishedMedia" defaultChecked={settings.includeTweetAvatarInPublishedMedia} title="Automatically add nominator signature" info="Automatically upload nominator twitter avatar to nominated tweet as an image so people know it wasn't the host that sent the tweet." />
             </div>
           </section>

@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Info, Repeat2, X } from "lucide-react";
+import { Info, Repeat2, ThumbsDown, ThumbsUp } from "lucide-react";
 import { Form, useLocation, useNavigate } from "react-router";
 import { AbuRatingDialog } from "~/components/AbuRatingDialog";
 import { TargetTweetCard } from "~/components/TargetTweetCard";
 import { nominationTypeLabel, type FeedNomination } from "~/domain/nominations";
+import type { VoteDisplayMode } from "~/domain/settings";
+import { getVoteDisplayOptions } from "~/domain/votes";
 import type { CurrentUser } from "~/repositories/interfaces";
 
 const buttonClass = "cursor-pointer rounded-md border px-3.5 py-2.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-45";
@@ -19,9 +21,11 @@ const manualUrlClass = "min-h-[38px] w-full rounded-md border border-[#1f242129]
 export function NominationCard({
   nomination,
   user,
+  voteDisplayMode,
 }: {
   nomination: FeedNomination;
   user: CurrentUser | null;
+  voteDisplayMode: VoteDisplayMode;
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -34,6 +38,7 @@ export function NominationCard({
   const canDeny = ["pending", "qualified", "approved", "failed", "denied"].includes(nomination.status);
   const canArchive = !["withdrawn", "sent"].includes(nomination.status);
   const voteDisabledReason = getVoteDisabledReason(user, nomination.status);
+  const voteOptions = getVoteDisplayOptions(voteDisplayMode, nomination);
   const expandedPath = `/nominations/${nomination.id}`;
   const creatorProfileUrl = nomination.creatorUsername ? `https://x.com/${nomination.creatorUsername}` : null;
   const openExpandedView = () => navigate(expandedPath, { state: { from: `${location.pathname}${location.search}` } });
@@ -136,30 +141,33 @@ export function NominationCard({
         <input type="hidden" name="_intent" value="vote" />
         <input type="hidden" name="nominationId" value={nomination.id} />
         <div className="flex gap-2">
-          {(["A", "B", "U"] as const).map((value) => (
-            <span className="group relative inline-flex" key={value}>
+          {voteOptions.map((option) => (
+            <span className="group relative inline-flex" key={option.value}>
               <button
-                className={`${voteClass} ${nomination.userVote === value ? activeVoteClass : ""}`}
+                className={`${voteClass} ${option.active ? activeVoteClass : ""}`}
                 name="value"
-                value={value}
+                value={option.value}
                 disabled={!canVote}
                 type="submit"
-                title={canVote && nomination.userVote === value ? "Undo your vote" : undefined}
-                aria-describedby={!canVote && voteDisabledReason ? `${nomination.id}-${value}-vote-disabled` : undefined}
-                aria-pressed={nomination.userVote === value}
+                title={getVoteButtonTitle(voteDisplayMode, option.label, option.active, canVote)}
+                aria-label={voteDisplayMode === "up_down" ? getVoteButtonLabel(option.label, option.count, option.active, canVote) : undefined}
+                aria-describedby={!canVote && voteDisabledReason ? `${nomination.id}-${option.value}-vote-disabled` : undefined}
+                aria-pressed={option.active}
               >
-                <span>{value}</span>
-                <strong>{value === "A" ? nomination.voteA : value === "B" ? nomination.voteB : nomination.voteU}</strong>
+                {voteDisplayMode === "up_down" ? <VoteIcon label={option.label} size={16} /> : <span>{option.label}</span>}
+                <strong>{option.count}</strong>
               </button>
-              {!canVote && voteDisabledReason ? <VoteDisabledTip id={`${nomination.id}-${value}-vote-disabled`} text={voteDisabledReason} /> : null}
+              {!canVote && voteDisabledReason ? <VoteDisabledTip id={`${nomination.id}-${option.value}-vote-disabled`} text={voteDisabledReason} /> : null}
             </span>
           ))}
-          <button className={voteInfoClass} type="button" onClick={() => setRatingInfoOpen(true)} aria-label="Show A/B/U rating explanation">
-            <Info size={16} aria-hidden="true" />
-          </button>
+          {voteDisplayMode === "abu" ? (
+            <button className={voteInfoClass} type="button" onClick={() => setRatingInfoOpen(true)} aria-label="Show A/B/U rating explanation">
+              <Info size={16} aria-hidden="true" />
+            </button>
+          ) : null}
         </div>
         <input className={voteCommentClass} name="comment" maxLength={400} placeholder="Optional vote comment" disabled={!canVote} />
-        {ratingInfoOpen ? <AbuRatingDialog onClose={() => setRatingInfoOpen(false)} /> : null}
+        {ratingInfoOpen && voteDisplayMode === "abu" ? <AbuRatingDialog onClose={() => setRatingInfoOpen(false)} /> : null}
       </Form>
       {decisionRationale}
       {publishedLink}
@@ -214,6 +222,23 @@ function getVoteDisabledReason(user: CurrentUser | null, status: FeedNomination[
   if (status === "sent") return "Voting is closed because this nomination has been sent.";
   if (status === "withdrawn") return "Voting is closed because this nomination has been archived.";
   return null;
+}
+
+function getVoteButtonTitle(mode: VoteDisplayMode, label: string, active: boolean, canVote: boolean | undefined) {
+  if (canVote && active) return "Undo your vote";
+  if (mode !== "up_down") return undefined;
+  return label === "Down" ? "Downvote" : "Upvote";
+}
+
+function getVoteButtonLabel(label: string, count: number, active: boolean, canVote: boolean | undefined) {
+  const voteLabel = label === "Down" ? "Downvote" : "Upvote";
+  if (canVote && active) return `Undo your ${voteLabel.toLowerCase()} (${count})`;
+  return `${voteLabel} (${count})`;
+}
+
+function VoteIcon({ label, size }: { label: string; size: number }) {
+  const Icon = label === "Down" ? ThumbsDown : ThumbsUp;
+  return <Icon size={size} strokeWidth={2.1} aria-hidden="true" />;
 }
 
 function VoteDisabledTip({ id, text }: { id: string; text: string }) {

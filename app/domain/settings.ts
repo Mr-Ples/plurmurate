@@ -7,9 +7,11 @@ export const publishingWorkflowSchema = z.enum([
   "auto_send_when_qualified",
 ]);
 export const tweetAvatarModeSchema = z.enum(["disabled", "optional", "required"]);
+export const voteDisplayModeSchema = z.enum(["abu", "up_down"]);
 
 export type PublishingWorkflow = z.infer<typeof publishingWorkflowSchema>;
 export type TweetAvatarMode = z.infer<typeof tweetAvatarModeSchema>;
+export type VoteDisplayMode = z.infer<typeof voteDisplayModeSchema>;
 
 export const automaticRoleWhitelistEntrySchema = z.object({
   username: z.string().trim().min(1),
@@ -28,6 +30,15 @@ export type AutomaticRoleWhitelistEntry = z.infer<typeof automaticRoleWhitelistE
 export type AutomaticRoleRule = z.infer<typeof automaticRoleRuleSchema>;
 
 const defaultVisibleFeedStatuses = nominationStatuses.filter((status) => status !== "draft" && status !== "withdrawn");
+const defaultAutomaticRoleRules: AutomaticRoleRule[] = [
+  {
+    id: "default-followers-more-than-5-voter",
+    subject: "followers",
+    operator: "more_than",
+    value: 5,
+    role: "voter",
+  },
+];
 
 const visibleFeedStatusesSchema = z.array(z.enum(nominationStatuses));
 
@@ -46,16 +57,21 @@ export const appSettingsSchema = z.object({
   minimumPositiveMargin: optionalManualThreshold(z.coerce.number().int(), 2),
   publishingWorkflow: publishingWorkflowSchema.default("manual_review_when_qualified"),
   tweetAvatarMode: tweetAvatarModeSchema.default("optional"),
+  voteDisplayMode: voteDisplayModeSchema.default("up_down"),
   includeTweetAvatarInPublishedMedia: z.coerce.boolean().default(false),
   enabledNominationTypes: z.array(z.enum(nominationTypes)).default([...nominationTypes]),
-  automaticRoleAssignmentEnabled: z.coerce.boolean().default(false),
+  automaticRoleAssignmentEnabled: z.coerce.boolean().default(true),
   automaticRoleWhitelist: z.array(automaticRoleWhitelistEntrySchema).default([]),
-  automaticRoleRules: z.array(automaticRoleRuleSchema).default([]),
+  automaticRoleRules: z.array(automaticRoleRuleSchema).default(defaultAutomaticRoleRules),
   roleFeedVisibility: roleFeedVisibilitySchema.default({
     spectator: defaultVisibleFeedStatuses,
     voter: defaultVisibleFeedStatuses,
     admin: nominationStatuses.filter((status) => status !== "draft"),
   }),
+  imageUploadsEnabled: z.coerce.boolean().default(true),
+  imageUploadRateLimitMaxImages: z.coerce.number().int().min(1).default(12),
+  imageUploadRateLimitWindowMinutes: z.coerce.number().int().min(1).default(15),
+  imageUploadDailyLimitMaxImages: z.coerce.number().int().min(1).default(50),
   maxImageUploadBytes: z.coerce.number().int().min(1).default(5 * 1024 * 1024),
   hostUserId: z.string().default(""),
   hostHandle: z.string().default(""),

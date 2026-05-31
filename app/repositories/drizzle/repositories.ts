@@ -524,6 +524,18 @@ export function getRepositories(env: { DB: D1Database; X_HOST_USER_ID?: string; 
           })
           .run();
       },
+      async countRecent(input) {
+        const row = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(auditLogs)
+          .where(and(
+            eq(auditLogs.actorUserId, input.actorUserId),
+            eq(auditLogs.action, input.action),
+            sql`${auditLogs.createdAt} >= ${input.since.toISOString()}`,
+          ))
+          .get();
+        return Number(row?.count ?? 0);
+      },
     },
   };
 }

@@ -29,7 +29,7 @@ export function AppShell({ user, children }: { user: CurrentUser | null; childre
 
   return (
     <div className="mx-auto w-full max-w-[1120px] px-3.5">
-      <header className="flex items-center justify-between gap-3.5 border-b border-[#1f242129] py-[22px] pb-3">
+      <header className="relative z-10 flex items-center justify-between gap-3.5 border-b border-[#1f242129] py-[22px] pb-3">
         <Link className="inline-flex shrink-0 items-center gap-2 font-serif text-[1.4rem]" to="/">
           <img className="h-6 w-6 rounded-sm" src="/favicon-32x32.png" alt="" aria-hidden="true" />
           <span>Plurmurate</span>

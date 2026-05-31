@@ -161,6 +161,11 @@ export interface AuditLogRepository {
     entityId: string;
     metadata: unknown;
   }): Promise<void>;
+  countRecent(input: {
+    actorUserId: string;
+    action: string;
+    since: Date;
+  }): Promise<number>;
 }
 
 export interface Repositories {
